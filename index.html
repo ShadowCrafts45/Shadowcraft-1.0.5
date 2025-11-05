@@ -269,9 +269,6 @@
 </div>
     
   <div id="banner"></div>
-  <h1>Shadow-craft</h1>
-  <p>Explore your world in peaceful mode</p>
-  <button id="start-button">Start Peaceful Mode</button>
   </div>
   <button id="leave-world-button">⏹ Leave World</button>
   <div id="confirm-leave" style="display:none;">
@@ -316,10 +313,7 @@
 
   <script type="module">
     import * as THREE from 'https://unpkg.com/three@0.154.0/build/three.module.js';
-document.getElementById('start-button').addEventListener('click', () => {
-  document.getElementById('start-screen').style.display = 'none';
-  // peaceful mode is default, so no extra logic needed yet
-});
+
     const select = document.getElementById('world-select');
 const loadBtn = document.getElementById('load-world-button');
 const newBtn = document.getElementById('new-world-button');
