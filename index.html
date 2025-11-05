@@ -16,7 +16,9 @@
  #start-screen {
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: radial-gradient(circle at center, #1a1a1a 0%, #0d0d0d 100%);
+  background: linear-gradient(-45deg, #0f0f0f, #1a1a1a, #222, #0f0f0f);
+  background-size: 400% 400%;
+  animation: gradientShift 12s ease infinite;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -25,14 +27,13 @@
   color: #fff;
   font-family: 'Segoe UI', sans-serif;
   text-align: center;
-  backdrop-filter: brightness(0.7);
-  animation: pulseBackground 6s ease-in-out infinite;
- }
-@keyframes pulseBackground {
-  0% { background-color: #111; }
-  50% { background-color: #222; }
-  100% { background-color: #111; }
 }
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+   }
+ 
  
 
     
@@ -166,30 +167,21 @@
 #new-world-button {
   padding: 10px 18px;
   font-size: 16px;
-  background: linear-gradient(90deg, #ffd36b, #ff8a3d);
+  background: #ffd36b;
   color: #000;
   border: none;
   border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  box-shadow: 0 0 12px rgba(255,211,107,0.4);
   cursor: pointer;
   font-weight: bold;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
-
 #load-world-button:hover,
 #new-world-button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-    }
-   #confirm-leave {
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 200;
+  transform: scale(1.08);
+  box-shadow: 0 0 20px rgba(255,211,107,0.6);
 }
+ 
 
 #confirm-box {
   background: #222;
@@ -229,17 +221,45 @@
 
 #confirm-box button:hover {
   transform: scale(1.05);
-  }
- #game-title {
+}
+    #game-title {
   font-size: 48px;
   color: #ffd36b;
   text-shadow: 0 0 12px rgba(255,211,107,0.4);
-  margin-bottom: 20px;
-    }
+  animation: floatTitle 4s ease-in-out infinite;
+}
+@keyframes floatTitle {
+  0% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+  100% { transform: translateY(0); }
+}
+    
+    #particle-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  pointer-events: none;
+  z-index: 99;
+  background-image: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+  animation: particleDrift 30s linear infinite;
+}
+@keyframes particleDrift {
+  0% { background-position: 0 0; }
+  100% { background-position: 100px 100px; }
+      }
+    #tutorial-box {
+  animation: fadeIn 2s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
     
   </style>
 </head>
 <body>
+  <div id="particle-overlay"></div>
+  
   <div id="start-screen">
     <h1 id="game-title">Shadow-craft</h1>
     
@@ -251,6 +271,35 @@
     
   
   </div>
+  <div id="tutorial-box">
+  <h2>🕹️ How to Play</h2>
+  <div class="tutorial-section">
+    <h3>💻 PC Controls</h3>
+    <ul>
+      <li><b>WASD</b> — Move</li>
+      <li><b>Space</b> — Jump</li>
+      <li><b>Q</b> — Break block</li>
+      <li><b>E</b> — Place block</li>
+      <li><b>P</b> — Toggle placing</li>
+      <li><b>I</b> — Open inventory</li>
+      <li><b>1–9</b> — Select block</li>
+      <li><b>Click</b> — Lock pointer</li>
+    </ul>
+  </div>
+  <div class="tutorial-section">
+    <h3>📱 Mobile Controls</h3>
+    <ul>
+      <li><b>Left joystick</b> — Move</li>
+      <li><b>Right drag</b> — Look around</li>
+      <li><b>⏫</b> — Jump</li>
+      <li><b>⛏</b> — Break block</li>
+      <li><b>🧱</b> — Place block</li>
+      <li><b>🎒</b> — Open inventory</li>
+      <li><b>👁️</b> — Toggle view</li>
+    </ul>
+  </div>
+  </div>
+  
   <button id="leave-world-button">⏹ Leave World</button>
   <div id="confirm-leave" style="display:none;">
   <div id="confirm-box">
