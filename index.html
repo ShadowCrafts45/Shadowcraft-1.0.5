@@ -402,6 +402,8 @@ loadBtn.addEventListener('click', () => {
   const name = select.value;
   if (loadWorld(name, world, player)) {
     document.getElementById('start-screen').style.display = 'none';
+    document.getElementById('tutorial-box').style.display = 'none';
+      
   } else {
     alert('World not found!');
   }
@@ -418,6 +420,8 @@ newBtn.addEventListener('click', () => {
   select.appendChild(opt);
   select.value = name;
   document.getElementById('start-screen').style.display = 'none';
+  document.getElementById('tutorial-box').style.display = 'none';
+      
 });
       
     function createPlayerModel() {
