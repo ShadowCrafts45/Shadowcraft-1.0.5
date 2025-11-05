@@ -538,6 +538,9 @@ materialCache = {};
     
     // ---------- World & player ----------
     const world = new VoxelWorld(WORLD_W, WORLD_H, WORLD_D, scene);
+    hud.innerText = '';
+rebuildHotbarUI();
+rebuildInventoryUI();
     const player = {
       pos: new THREE.Vector3(Math.floor(WORLD_W/2)+0.5, WORLD_H + PLAYER_EYE - 2, Math.floor(WORLD_D/2)+0.5),
       velocity: new THREE.Vector3(),
