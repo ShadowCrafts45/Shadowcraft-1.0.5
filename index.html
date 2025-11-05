@@ -734,7 +734,6 @@ playerModel.position.set(player.pos.x, player.pos.y - 1.2, player.pos.z);
           break;
         }
       }
-
 const eye = player.pos.clone();
 if (eye.y < PLAYER_EYE) eye.y = PLAYER_EYE;
 
@@ -746,6 +745,11 @@ if (thirdPerson) {
   );
   camera.position.copy(eye.clone().add(behind));
   camera.lookAt(eye);
+
+  // Show and rotate player model
+  playerModel.visible = true;
+  playerModel.position.set(player.pos.x, player.pos.y - 1.2, player.pos.z);
+  playerModel.rotation.y = player.yaw;
 } else {
   camera.position.set(eye.x, eye.y, eye.z);
   const lookDir = new THREE.Vector3(
@@ -754,7 +758,11 @@ if (thirdPerson) {
     Math.cos(player.yaw) * Math.cos(player.pitch)
   );
   camera.lookAt(eye.clone().add(lookDir));
-    }
+
+  // Hide player model in first-person
+  playerModel.visible = false;
+}
+      
     
       // targeting
       const tgt = getBlockTarget();
