@@ -538,9 +538,7 @@ materialCache = {};
     
     // ---------- World & player ----------
     const world = new VoxelWorld(WORLD_W, WORLD_H, WORLD_D, scene);
-    hud.innerText = '';
-rebuildHotbarUI();
-rebuildInventoryUI();
+    
     const player = {
       pos: new THREE.Vector3(Math.floor(WORLD_W/2)+0.5, WORLD_H + PLAYER_EYE - 2, Math.floor(WORLD_D/2)+0.5),
       velocity: new THREE.Vector3(),
@@ -548,7 +546,10 @@ rebuildInventoryUI();
       speed: 4.0, jumpVel: 6.0, onGround: false
     };
     setupControls(player, camera);
-
+hud.innerText = '';
+rebuildHotbarUI();
+rebuildInventoryUI();
+    
     // raycast helper
     const raycaster = new THREE.Raycaster();
     function getBlockTarget(){
