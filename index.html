@@ -513,21 +513,31 @@ for (const id in BLOCKS) {
 function saveWorld(name, world, player) {
   const data = {
     blocks: Array.from(world.blocks),
-    player: { x: player.pos.x, y: player.pos.y, z: player.pos.z }
+    player: { x: player.pos.x, y: player.pos.y, z: player.pos.z },
+    inventory,
+    selectedBlockId
   };
   localStorage.setItem(`world-${name}`, JSON.stringify(data));
-}
+    }
+        
 
 function loadWorld(name, world, player) {
   const raw = localStorage.getItem(`world-${name}`);
   if (!raw) return false;
   const data = JSON.parse(raw);
+
   world.blocks = new Uint8Array(data.blocks);
   world.updateMeshes();
+
   player.pos.set(data.player.x, data.player.y, data.player.z);
+
+  if (data.inventory) inventory = data.inventory;
+  if (data.selectedBlockId) selectedBlockId = data.selectedBlockId;
+
+  rebuildHotbarUI(); // refresh UI with loaded inventory
   return true;
 }
-
+    
 function listWorlds() {
   return Object.keys(localStorage)
     .filter(k => k.startsWith('world-'))
