@@ -25,10 +25,22 @@
   z-index: 40;
     }
     
+    #button-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  pointer-events: auto;
+  z-index: 50;
+}
+
+.action-row {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  pointer-events: auto;
+}
     
-    
-    .action-row { display:flex; gap:10px; margin-top:6px; pointer-events:auto;
-  z-index: 50; }
     .btn { width:56px; height:56px; background:rgba(255,255,255,0.06); border-radius:12px; border:1px solid rgba(255,255,255,0.12); color:#fff; font-size:20px; display:flex; align-items:center; justify-content:center; user-select:none; touch-action:manipulation; pointer-events: auto;}
     #hotbar { position:fixed; left:50%; transform:translateX(-50%); bottom:84px; z-index:55; display:flex; gap:8px; pointer-events:none; }
     .hotbar-slot { pointer-events:auto; width:64px; height:64px; background:rgba(0,0,0,0.6); border-radius:8px; border:2px solid rgba(255,255,255,0.08); display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff; font-size:12px; cursor:pointer; box-sizing:border-box; }
@@ -102,13 +114,15 @@
     <div id="joy-left" aria-hidden="true"><div class="joy-bg"></div><div class="joy-knob" id="joy-knob">•</div></div>
     <div id="right-controls" aria-hidden="true">
       <div id="look-area" title="Drag here to look (mobile)"></div>
-      <div class="action-row">
-        <div class="btn" id="btn-break">⛏</div>
-        <div class="btn" id="btn-jump">⏫</div>
-        <div class="btn" id="btn-place">🧱</div>
-        <div class="btn" id="btn-inventory">🎒</div>
+      <div id="button-stack">
+  <div class="btn" id="btn-jump">⏫</div>
+  <div class="action-row">
+    <div class="btn" id="btn-break">⛏</div>
+    <div class="btn" id="btn-place">🧱</div>
+    <div class="btn" id="btn-inventory">🎒</div>
+  </div>
       </div>
-    </div>
+      
   </div>
 
   <div id="hotbar"></div>
