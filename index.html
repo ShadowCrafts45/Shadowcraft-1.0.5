@@ -413,7 +413,6 @@ loadBtn.addEventListener('click', () => {
 newBtn.addEventListener('click', () => {
   const name = prompt('Enter new world name:');
   if (!name) return;
-  saveWorld(name, world, player); // Save initial empty world
   const opt = document.createElement('option');
   opt.value = name;
   opt.textContent = name;
@@ -887,6 +886,8 @@ scene.add(sun);
     setupControls(player, camera);
 const playerModel = createPlayerModel();
 scene.add(playerModel);
+    
+  saveWorld(name, world, player); // Save initial empty world
 playerModel.position.set(player.pos.x, player.pos.y - 1.2, player.pos.z);
     
     // raycast helper
