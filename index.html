@@ -219,32 +219,81 @@ for (const id in BLOCKS) {
     // procedural textures (small canvases)
     const textureCanvases = {};
     function makeBlockCanvas(colorHex, opts = {}) {
-      const size = 64;
-      const c = document.createElement('canvas'); c.width = c.height = size;
-      const ctx = c.getContext('2d');
-      ctx.fillStyle = '#' + colorHex.toString(16).padStart(6,'0');
-      ctx.fillRect(0,0,size,size);
-      const g = ctx.createLinearGradient(0,0,size,size);
-      g.addColorStop(0, 'rgba(255,255,255,0.12)'); g.addColorStop(1, 'rgba(0,0,0,0.12)');
-      ctx.fillStyle = g; ctx.fillRect(0,0,size,size);
-      const img = ctx.getImageData(0,0,size,size);
-      for(let i=0;i<img.data.length;i+=4){
-        const v = (Math.random()*28 - 14)|0;
-        img.data[i] = clamp(img.data[i]+v,0,255);
-        img.data[i+1] = clamp(img.data[i+1]+v,0,255);
-        img.data[i+2] = clamp(img.data[i+2]+v,0,255);
-      }
-      ctx.putImageData(img,0,0);
-      if(opts.type === 'wood'){ ctx.strokeStyle='rgba(0,0,0,0.06)'; ctx.lineWidth=2; for(let i=8;i<size;i+=8){ ctx.beginPath(); ctx.ellipse(size/2,size/2,i,i*0.6,0,0,Math.PI*2); ctx.stroke(); } }
-      if(opts.type === 'leaves'){ ctx.fillStyle='rgba(255,255,255,0.06)'; for(let i=0;i<25;i++) ctx.fillRect(Math.random()*size, Math.random()*size, Math.random()*6+1, Math.random()*6+1); }
-      if(opts.type === 'sand'){ ctx.fillStyle='rgba(0,0,0,0.04)'; for(let i=0;i<100;i++) ctx.fillRect(Math.random()*size, Math.random()*size, 1, 1); }
-      return c;
+  const size = 64;
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const ctx = c.getContext('2d');
+
+  // Base fill
+  ctx.fillStyle = '#' + colorHex.toString(16).padStart(6,'0');
+  ctx.fillRect(0, 0, size, size);
+
+  // Soft lighting gradient
+  const g = ctx.createLinearGradient(0, 0, size, size);
+  g.addColorStop(0, 'rgba(255,255,255,0.08)');
+  g.addColorStop(1, 'rgba(0,0,0,0.08)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+
+  // Noise layer
+  const img = ctx.getImageData(0, 0, size, size);
+  for (let i = 0; i < img.data.length; i += 4) {
+    const v = (Math.random() * 24 - 12) | 0;
+    img.data[i] = clamp(img.data[i] + v, 0, 255);
+    img.data[i+1] = clamp(img.data[i+1] + v, 0, 255);
+    img.data[i+2] = clamp(img.data[i+2] + v, 0, 255);
+  }
+  ctx.putImageData(img, 0, 0);
+
+  // Stylized overlays
+  if (opts.type === 'wood') {
+    ctx.strokeStyle = 'rgba(0,0,0,0.06)';
+    ctx.lineWidth = 2;
+    for (let i = 8; i < size; i += 8) {
+      ctx.beginPath();
+      ctx.ellipse(size/2, size/2, i, i*0.6, 0, 0, Math.PI*2);
+      ctx.stroke();
     }
+  }
+
+  if (opts.type === 'leaves') {
+    ctx.fillStyle = 'rgba(255,255,255,0.06)';
+    for (let i = 0; i < 25; i++) {
+      ctx.fillRect(Math.random()*size, Math.random()*size, Math.random()*6+1, Math.random()*6+1);
+    }
+  }
+
+  if (opts.type === 'sand') {
+    ctx.fillStyle = 'rgba(0,0,0,0.04)';
+    for (let i = 0; i < 100; i++) {
+      ctx.fillRect(Math.random()*size, Math.random()*size, 1, 1);
+    }
+  }
+
+  if (opts.type === 'stone') {
+    ctx.fillStyle = 'rgba(255,255,255,0.04)';
+    for (let i = 0; i < 80; i++) {
+      const x = Math.random() * size;
+      const y = Math.random() * size;
+      ctx.beginPath();
+      ctx.arc(x, y, Math.random()*2+1, 0, Math.PI*2);
+      ctx.fill();
+    }
+  }
+
+  return c;
+    }
+        
     const materialCache = {};
     function getMaterialForBlock(id){
       if(materialCache[id]) return materialCache[id];
       const meta = BLOCKS[id];
-      const canvas = textureCanvases[id] || (textureCanvases[id] = makeBlockCanvas(meta.color, { type: meta.name.toLowerCase().includes('wood') ? 'wood' : meta.name.toLowerCase().includes('leaves') ? 'leaves' : meta.name.toLowerCase().includes('sand') ? 'sand' : '' }));
+      const canvas = textureCanvases[id] || (textureCanvases[id] = makeBlockCanvas(meta.color, {
+  type: meta.name.toLowerCase().includes('wood') ? 'wood' :
+        meta.name.toLowerCase().includes('leaves') ? 'leaves' :
+        meta.name.toLowerCase().includes('sand') ? 'sand' :
+        meta.name.toLowerCase().includes('stone') ? 'stone' : ''
+}));
+    
       const tex = new THREE.CanvasTexture(canvas);
       tex.needsUpdate = true;
       const mat = new THREE.MeshLambertMaterial({ map: tex, transparent: false });
