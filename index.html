@@ -13,6 +13,41 @@
     .joy-bg { width:100%; height:100%; background:rgba(255,255,255,0.04); border-radius:50%; border:1px solid rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; }
     .joy-knob { width:48px; height:48px; background:rgba(255,255,255,0.14); border-radius:50%; transform:translate(-50%,-50%); position:absolute; left:50%; top:50%; pointer-events:none; display:flex; align-items:center; justify-content:center; color:#fff; font-size:14px; }
     #right-controls { margin-right:12px; display:flex; flex-direction:column; gap:10px; pointer-events:none; align-items:flex-end; }
+   #start-screen {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: #000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  color: #fff;
+  font-family: 'Segoe UI', sans-serif;
+  text-align: center;
+}
+
+#banner {
+  width: 90%;
+  max-width: 600px;
+  height: 180px;
+  background-image: url('your-banner-image.jpg'); /* Replace with your image path */
+  background-size: cover;
+  background-position: center;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+#start-button {
+  padding: 12px 24px;
+  font-size: 18px;
+  background: #ffd36b;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #000;
+  }
+    
     #look-area {
   position: fixed;
   top: 0;
@@ -105,6 +140,13 @@
   </style>
 </head>
 <body>
+  <div id="start-screen">
+  <div id="banner"></div>
+  <h1>Shadow-craft</h1>
+  <p>Explore your world in peaceful mode</p>
+  <button id="start-button">Start Peaceful Mode</button>
+  </div>
+  
   <div id="hud">Loading...</div>
   <div id="hint">Click to lock pointer (desktop). WASD to move, Space to jump, Q break. Placing remains disabled by default. Mobile: left joystick move, right drag look.</div>
 <div id="crosshair">+</div>
@@ -134,7 +176,11 @@
 
   <script type="module">
     import * as THREE from 'https://unpkg.com/three@0.154.0/build/three.module.js';
-
+document.getElementById('start-button').addEventListener('click', () => {
+  document.getElementById('start-screen').style.display = 'none';
+  // peaceful mode is default, so no extra logic needed yet
+});
+    
     // ===== Optimized: flatter terrain, fewer trees, collision fixes, lower pixel ratio =====
     const WORLD_W = 88, WORLD_H = 36, WORLD_D = 88;
     const PLAYER_EYE = 1.6;
