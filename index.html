@@ -163,6 +163,8 @@
       <div id="look-area" title="Drag here to look (mobile)"></div>
       <div id="button-stack">
   <div class="btn" id="btn-jump">⏫</div>
+        <div class="btn" id="btn-toggle-view">👁️</div>
+        
   <div class="action-row">
     <div class="btn" id="btn-break">⛏</div>
     <div class="btn" id="btn-place">🧱</div>
@@ -220,6 +222,8 @@ document.getElementById('start-button').addEventListener('click', () => {
     const PLAYER_EYE = 1.6;
     const JOY_DEADZONE = 0.18, MAX_JOY = 48;
     const BLOCK_AIR = 0;
+    let thirdPerson = false;
+      
 const BLOCKS = {
   1: { name: 'Dirt', color: 0x5a3e2b },       // deeper brown
   2: { name: 'Stone', color: 0x6e6e6e },      // darker gray
@@ -469,6 +473,14 @@ for (const id in BLOCKS) {
     }
 
     function setupControls(player, camera){
+      const btnToggleView = document.getElementById('btn-toggle-view');
+if (btnToggleView) {
+  btnToggleView.addEventListener('touchstart', e => {
+    e.preventDefault();
+    thirdPerson = !thirdPerson;
+  }, { passive: false });
+    }
+    
       document.addEventListener('click', ()=>{ if(window.matchMedia && window.matchMedia('(pointer: fine)').matches) document.body.requestPointerLock?.(); });
       document.addEventListener('pointerlockchange', ()=>{ if(document.pointerLockElement === document.body) window.addEventListener('mousemove', onMouseMove); else window.removeEventListener('mousemove', onMouseMove); });
       function onMouseMove(e){ player.yaw -= e.movementX * 0.0025; player.pitch -= e.movementY * 0.0025; player.pitch = clamp(player.pitch, -Math.PI/2 + 0.01, Math.PI/2 - 0.01); }
@@ -481,6 +493,11 @@ document.addEventListener('pointerlockchange', () => {
 });
     
       window.addEventListener('keydown', e=>{
+        if (e.code === 'F5') {
+  e.preventDefault(); // prevent browser refresh
+  thirdPerson = !thirdPerson;
+        }
+        
         if(e.code==='KeyW') inputState.fw = 1;
         if(e.code==='KeyS') inputState.bk = 1;
         if(e.code==='KeyA') inputState.lt = 1;
@@ -718,13 +735,27 @@ playerModel.position.set(player.pos.x, player.pos.y - 1.2, player.pos.z);
         }
       }
 
-      // camera follow
-      const eye = player.pos.clone();
-      if(eye.y < PLAYER_EYE) eye.y = PLAYER_EYE;
-      camera.position.set(eye.x, eye.y, eye.z);
-      const lookDir = new THREE.Vector3(Math.sin(player.yaw) * Math.cos(player.pitch), Math.sin(player.pitch), Math.cos(player.yaw) * Math.cos(player.pitch));
-      camera.lookAt(eye.clone().add(lookDir));
+const eye = player.pos.clone();
+if (eye.y < PLAYER_EYE) eye.y = PLAYER_EYE;
 
+if (thirdPerson) {
+  const behind = new THREE.Vector3(
+    Math.sin(player.yaw) * -3,
+    1.5,
+    Math.cos(player.yaw) * -3
+  );
+  camera.position.copy(eye.clone().add(behind));
+  camera.lookAt(eye);
+} else {
+  camera.position.set(eye.x, eye.y, eye.z);
+  const lookDir = new THREE.Vector3(
+    Math.sin(player.yaw) * Math.cos(player.pitch),
+    Math.sin(player.pitch),
+    Math.cos(player.yaw) * Math.cos(player.pitch)
+  );
+  camera.lookAt(eye.clone().add(lookDir));
+    }
+    
       // targeting
       const tgt = getBlockTarget();
       const cross = document.getElementById('crosshair');
