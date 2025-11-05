@@ -185,6 +185,35 @@ document.getElementById('start-button').addEventListener('click', () => {
   document.getElementById('start-screen').style.display = 'none';
   // peaceful mode is default, so no extra logic needed yet
 });
+    function createPlayerModel() {
+  const skinCanvas = makePlayerSkinCanvas();
+  const skinTexture = new THREE.CanvasTexture(skinCanvas);
+  skinTexture.magFilter = THREE.NearestFilter;
+
+  const mat = new THREE.MeshBasicMaterial({ map: skinTexture });
+
+  const group = new THREE.Group();
+
+  const head = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.8, 0.8), mat);
+  head.position.set(0, 1.8, 0); group.add(head);
+
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(1, 1.2, 0.6), mat);
+  torso.position.set(0, 0.9, 0); group.add(torso);
+
+  const armL = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.2, 0.3), mat);
+  armL.position.set(-0.65, 0.9, 0); group.add(armL);
+
+  const armR = new THREE.Mesh(new THREE.BoxGeometry(0.3, 1.2, 0.3), mat);
+  armR.position.set(0.65, 0.9, 0); group.add(armR);
+
+  const legL = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.2, 0.4), mat);
+  legL.position.set(-0.25, 0.0, 0); group.add(legL);
+
+  const legR = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.2, 0.4), mat);
+  legR.position.set(0.25, 0.0, 0); group.add(legR);
+
+  return group;
+    }
     
     // ===== Optimized: flatter terrain, fewer trees, collision fixes, lower pixel ratio =====
     const WORLD_W = 88, WORLD_H = 36, WORLD_D = 88;
@@ -282,7 +311,35 @@ for (const id in BLOCKS) {
 
   return c;
     }
-        
+    function makePlayerSkinCanvas() {
+  const size = 64;
+  const c = document.createElement('canvas'); c.width = c.height = size;
+  const ctx = c.getContext('2d');
+
+  // Skin base
+  ctx.fillStyle = '#f2c18d'; // skin tone
+  ctx.fillRect(0, 0, size, size);
+
+  // Hair
+  ctx.fillStyle = '#5a3e2b'; // brown
+  ctx.fillRect(0, 0, size, 16);
+
+  // Eyes
+  ctx.fillStyle = '#000';
+  ctx.fillRect(20, 24, 4, 4);
+  ctx.fillRect(40, 24, 4, 4);
+
+  // Shirt
+  ctx.fillStyle = '#2e8b57'; // green
+  ctx.fillRect(0, 32, size, 16);
+
+  // Pants
+  ctx.fillStyle = '#555'; // gray
+  ctx.fillRect(0, 48, size, 16);
+
+  return c;
+    }
+    
     const materialCache = {};
     function getMaterialForBlock(id){
       if(materialCache[id]) return materialCache[id];
@@ -512,7 +569,10 @@ if (btnInventory) {
       speed: 4.0, jumpVel: 6.0, onGround: false
     };
     setupControls(player, camera);
-
+const playerModel = createPlayerModel();
+scene.add(playerModel);
+playerModel.position.set(player.pos.x, player.pos.y - 1.2, player.pos.z);
+    
     // raycast helper
     const raycaster = new THREE.Raycaster();
     function getBlockTarget(){
