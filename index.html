@@ -254,24 +254,39 @@
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
-    
+    #toggle-tutorial-button {
+  padding: 10px 18px;
+  font-size: 16px;
+  background: linear-gradient(90deg, #6bcaff, #3d9eff);
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 0 12px rgba(107,202,255,0.4);
+  cursor: pointer;
+  font-weight: bold;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+#toggle-tutorial-button:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 20px rgba(107,202,255,0.6);
+      }
+      
   </style>
 </head>
 <body>
   <div id="particle-overlay"></div>
-  
   <div id="start-screen">
-    <h1 id="game-title">Shadow-craft</h1>
-    
-    <select id="world-select"></select>
-<div style="display: flex; gap: 12px; margin-top: 12px;">
-  <button id="load-world-button">▶️ Load World</button>
-  <button id="new-world-button">🌍 Create New World</button>
-</div>
-    
-  
+  <h1 id="game-title">Shadow-craft</h1>
+
+  <select id="world-select"></select>
+  <div style="display: flex; gap: 12px; margin-top: 12px;">
+    <button id="load-world-button">▶️ Load World</button>
+    <button id="new-world-button">🌍 Create New World</button>
+    <button id="toggle-tutorial-button">📘 Tutorial</button>
   </div>
-  <div id="tutorial-box">
+</div>
+
+<div id="tutorial-box" style="display:none;">
   <h2>🕹️ How to Play</h2>
   <div class="tutorial-section">
     <h3>💻 PC Controls</h3>
@@ -298,7 +313,8 @@
       <li><b>👁️</b> — Toggle view</li>
     </ul>
   </div>
-  </div>
+</div>
+  
   
   <button id="leave-world-button">⏹ Leave World</button>
   <div id="confirm-leave" style="display:none;">
@@ -789,6 +805,13 @@ confirmLeaveBtn.addEventListener('click', () => {
 
 cancelLeaveBtn.addEventListener('click', () => {
   confirmPopup.style.display = 'none';
+});
+ const tutorialBtn = document.getElementById('toggle-tutorial-button');
+const tutorialBox = document.getElementById('tutorial-box');
+
+tutorialBtn.addEventListener('click', () => {
+  const isVisible = tutorialBox.style.display === 'block';
+  tutorialBox.style.display = isVisible ? 'none' : 'block';
 });
     
       // on-screen buttons
