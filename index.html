@@ -261,7 +261,10 @@ for (const id in BLOCKS) {
     function rebuildInventoryUI() {
   const grid = document.getElementById('inventory-grid');
   grid.innerHTML = '';
-  const keys = Object.keys(BLOCKS).map(x => parseInt(x));
+  const keys = Object.keys(BLOCKS)
+  .map(x => parseInt(x))
+  .filter(id => id !== 10); // exclude Glass
+                      
   for (const id of keys) {
     const slot = document.createElement('div');
     slot.className = 'inventory-slot';
