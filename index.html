@@ -385,6 +385,7 @@
   <script type="module">
     import * as THREE from 'https://unpkg.com/three@0.154.0/build/three.module.js';
 
+    
     const select = document.getElementById('world-select');
 const loadBtn = document.getElementById('load-world-button');
 const newBtn = document.getElementById('new-world-button');
@@ -400,28 +401,46 @@ listWorlds().forEach(name => {
 // Load selected world
 loadBtn.addEventListener('click', () => {
   const name = select.value;
+  currentWorldName = name;
+
+  // Create empty world and player before loading
+  world = new VoxelWorld(WORLD_W, WORLD_H, WORLD_D, scene);
+  player = createPlayerModel();
+  scene.add(player);
+
   if (loadWorld(name, world, player)) {
     document.getElementById('start-screen').style.display = 'none';
     document.getElementById('tutorial-box').style.display = 'none';
-      
   } else {
     alert('World not found!');
   }
 });
-
-// Create new world
+  
 newBtn.addEventListener('click', () => {
   const name = prompt('Enter new world name:');
   if (!name) return;
+
+  // ✅ Create new world and player
+  world = new VoxelWorld(WORLD_W, WORLD_H, WORLD_D, scene);
+  player = createPlayerModel();
+  scene.add(player);
+  currentWorldName = name;
+
+  // ✅ Save the new world
+  saveWorld(name, world, player);
+
+  // ✅ Add to dropdown
   const opt = document.createElement('option');
   opt.value = name;
   opt.textContent = name;
   select.appendChild(opt);
   select.value = name;
+
+  // ✅ Hide UI
   document.getElementById('start-screen').style.display = 'none';
   document.getElementById('tutorial-box').style.display = 'none';
-      
 });
+    
       
     function createPlayerModel() {
   const skinCanvas = makePlayerSkinCanvas();
@@ -459,6 +478,9 @@ newBtn.addEventListener('click', () => {
     const JOY_DEADZONE = 0.18, MAX_JOY = 48;
     const BLOCK_AIR = 0;
     let thirdPerson = false;
+    let world, player;
+let currentWorldName = null;
+    
       
 const BLOCKS = {
   1: { name: 'Dirt', color: 0x5a3e2b },       // deeper brown
