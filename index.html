@@ -140,19 +140,18 @@
     const PLAYER_EYE = 1.6;
     const JOY_DEADZONE = 0.18, MAX_JOY = 48;
     const BLOCK_AIR = 0;
-const BLOCKS = {
-  1: { name: 'Dirt', color: 0x6c5b38, hardness: 0.6 },
-  2: { name: 'Stone', color: 0x8b8b8b, hardness: 1.4 },
-  3: { name: 'Grass', color: 0x3ea033, hardness: 0.7 },
-  4: { name: 'Wood', color: 0x8b5a2b, hardness: 1.0 },
-  5: { name: 'Leaves', color: 0x4ca04c, hardness: 0.3 },
-  6: { name: 'Sand', color: 0xe4d99b, hardness: 0.5 },
-  7: { name: 'Cobblestone', color: 0x777777, hardness: 1.2 },
-  8: { name: 'Brick', color: 0xb03030, hardness: 1.5 },
-  9: { name: 'Gold', color: 0xffd700, hardness: 2.0 },
-  10: { name: 'Glass', color: 0xccccff, hardness: 0.2 }
-};
-    delete BLOCKS[10];
+BLOCKS = {
+  1: { name: 'Dirt', color: 0x5a3e2b },       // deeper brown
+  2: { name: 'Stone', color: 0x6e6e6e },      // darker gray
+  3: { name: 'Grass', color: 0x2e8b57 },      // richer green
+  4: { name: 'Wood', color: 0x7b4a2b },       // warmer wood
+  5: { name: 'Leaves', color: 0x3e803e },     // forest green
+  6: { name: 'Sand', color: 0xd2b48c },       // tan
+  7: { name: 'Cobblestone', color: 0x555555 },// gritty gray
+  8: { name: 'Brick', color: 0x8b0000 },      // deep red
+  9: { name: 'Gold', color: 0xffc300 },       // bold gold
+    }
+  
     
 let inventory = {};
 for (const id in BLOCKS) {
@@ -175,11 +174,11 @@ for (const id in BLOCKS) {
       ctx.fillStyle = '#' + colorHex.toString(16).padStart(6,'0');
       ctx.fillRect(0,0,size,size);
       const g = ctx.createLinearGradient(0,0,size,size);
-      g.addColorStop(0, 'rgba(255,255,255,0.06)'); g.addColorStop(1, 'rgba(0,0,0,0.06)');
+      g.addColorStop(0, 'rgba(255,255,255,0.12)'); g.addColorStop(1, 'rgba(0,0,0,0.12)');
       ctx.fillStyle = g; ctx.fillRect(0,0,size,size);
       const img = ctx.getImageData(0,0,size,size);
       for(let i=0;i<img.data.length;i+=4){
-        const v = (Math.random()*18 - 9)|0;
+        const v = (Math.random()*28 - 14)|0;
         img.data[i] = clamp(img.data[i]+v,0,255);
         img.data[i+1] = clamp(img.data[i+1]+v,0,255);
         img.data[i+2] = clamp(img.data[i+2]+v,0,255);
