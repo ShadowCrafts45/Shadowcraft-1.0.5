@@ -685,7 +685,7 @@ document.addEventListener('pointerlockchange', () => {
 });
     
       window.addEventListener('keydown', e=>{
-        if (e.code === 'F5') {
+        if (e.code === 'KeyZ') {
   e.preventDefault(); // prevent browser refresh
   thirdPerson = !thirdPerson;
         }
@@ -752,9 +752,6 @@ if (leaveBtn) {
 confirmLeaveBtn.addEventListener('click', () => {
   confirmPopup.style.display = 'none';
   document.getElementById('start-screen').style.display = 'flex';
-  document.getElementById('hud').style.display = 'none';
-  document.getElementById('hotbar').style.display = 'none';
-  document.getElementById('inventory-panel').style.display = 'none';
 });
 
 cancelLeaveBtn.addEventListener('click', () => {
