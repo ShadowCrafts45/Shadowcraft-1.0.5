@@ -223,10 +223,10 @@ for (const id in BLOCKS) {
             const distEdge = Math.min(x,z,this.w-1-x,this.d-1-z);
             if(distEdge < 3) h = Math.max(1, 1 + Math.floor(Math.random()*1.2));
             for(let y=0;y<h;y++){
-              if(distEdge < 3) this.set(x,y,z,6); else if(y < h-1) this.set(x,y,z,2); else this.set(x,y,z,1);
+              if(distEdge < 3) this.set(x,y,z,6); else if(y < h-1) this.set(x,y,z,2); else this.set(x,y,z,3);
             }
             // fewer trees
-            if(h>2 && Math.random() < 0.01 && distEdge >= 5){
+            if(h>2 && Math.random() < 0.15 && distEdge >= 5){
               const trunk = 2 + Math.floor(Math.random()*2);
               for(let ty=h; ty<h+trunk && ty<this.h-1; ty++) this.set(x,ty,z,4);
               const ly = Math.min(h+trunk, this.h-2);
@@ -308,14 +308,21 @@ for (const id in BLOCKS) {
         hotbarEl.appendChild(slot);
       }
       const hint = document.getElementById('hint');
-      hint.innerText = allowPlacing ? 'Placing enabled — E to place. Press P to toggle.' : 'Placing DISABLED — cannot place blocks. Press P to toggle.';
+      hint.innerText = allowPlacing ? 'Placing enabled — E to place. Press P to toggle. Press Q to break' : 'Placing DISABLED — cannot place blocks. Press P to toggle. Press Q to break';
     }
 
     function setupControls(player, camera){
       document.addEventListener('click', ()=>{ if(window.matchMedia && window.matchMedia('(pointer: fine)').matches) document.body.requestPointerLock?.(); });
       document.addEventListener('pointerlockchange', ()=>{ if(document.pointerLockElement === document.body) window.addEventListener('mousemove', onMouseMove); else window.removeEventListener('mousemove', onMouseMove); });
       function onMouseMove(e){ player.yaw -= e.movementX * 0.0025; player.pitch -= e.movementY * 0.0025; player.pitch = clamp(player.pitch, -Math.PI/2 + 0.01, Math.PI/2 - 0.01); }
-
+document.addEventListener('pointerlockchange', () => {
+  if (document.pointerLockElement === document.body) {
+    window.addEventListener('mousemove', onMouseMove);
+  } else {
+    window.removeEventListener('mousemove', onMouseMove);
+  }
+});
+    
       window.addEventListener('keydown', e=>{
         if(e.code==='KeyW') inputState.fw = 1;
         if(e.code==='KeyS') inputState.bk = 1;
