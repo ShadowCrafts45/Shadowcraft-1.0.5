@@ -839,6 +839,8 @@ if (tgt && tgt.block) {
     camera.position.set(player.pos.x, player.pos.y, player.pos.z);
     camera.lookAt(player.pos.x + Math.sin(player.yaw), player.pos.y + Math.sin(player.pitch), player.pos.z + Math.cos(player.yaw));
     document.getElementById('hud').innerText = 'Loaded. Click to pointer-lock and play. Flatter terrain and collision fixes applied.';
+    animate(performance.now());
+    
   </script>
 </body>
 </html>
