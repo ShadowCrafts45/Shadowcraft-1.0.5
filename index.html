@@ -279,7 +279,32 @@ for (const id in BLOCKS) {
       ctx.fill();
     }
   }
+if (opts.type === 'brick') {
+  ctx.fillStyle = 'rgba(0,0,0,0.08)';
+  for (let y = 0; y < size; y += 8) {
+    ctx.fillRect(0, y, size, 2);
+  }
+  for (let x = 0; x < size; x += 16) {
+    ctx.fillRect(x, 0, 2, size);
+  }
+}
 
+if (opts.type === 'dirt') {
+  ctx.fillStyle = 'rgba(0,0,0,0.05)';
+  for (let i = 0; i < 60; i++) {
+    ctx.beginPath();
+    ctx.arc(Math.random()*size, Math.random()*size, Math.random()*2+1, 0, Math.PI*2);
+    ctx.fill();
+  }
+}
+
+if (opts.type === 'grass') {
+  ctx.fillStyle = 'rgba(0,255,0,0.05)';
+  for (let i = 0; i < 40; i++) {
+    ctx.fillRect(Math.random()*size, Math.random()*size, 2, 2);
+  }
+      }
+    
   return c;
     }
         
@@ -288,10 +313,15 @@ for (const id in BLOCKS) {
       if(materialCache[id]) return materialCache[id];
       const meta = BLOCKS[id];
       const canvas = textureCanvases[id] || (textureCanvases[id] = makeBlockCanvas(meta.color, {
-  type: meta.name.toLowerCase().includes('wood') ? 'wood' :
-        meta.name.toLowerCase().includes('leaves') ? 'leaves' :
-        meta.name.toLowerCase().includes('sand') ? 'sand' :
-        meta.name.toLowerCase().includes('stone') ? 'stone' : ''
+ type: meta.name.toLowerCase().includes('wood') ? 'wood' :
+      meta.name.toLowerCase().includes('leaves') ? 'leaves' :
+      meta.name.toLowerCase().includes('sand') ? 'sand' :
+      meta.name.toLowerCase().includes('stone') || meta.name.toLowerCase().includes('cobble') ? 'stone' :
+      meta.name.toLowerCase().includes('brick') ? 'brick' :
+      meta.name.toLowerCase().includes('dirt') ? 'dirt' :
+      meta.name.toLowerCase().includes('grass') ? 'grass' :
+      ''
+    
 }));
     
       const tex = new THREE.CanvasTexture(canvas);
@@ -314,6 +344,7 @@ for (const id in BLOCKS) {
         this.generateTerrain();
         this.updateMeshes();
       }
+  
       generateTerrain(){
         for(let x=0;x<this.w;x++){
           for(let z=0;z<this.d;z++){
@@ -502,7 +533,9 @@ if (btnInventory) {
     const camera = new THREE.PerspectiveCamera(75, innerWidth/innerHeight, 0.1, 1000);
     scene.add(new THREE.AmbientLight(0xffffff, 0.6));
     const sun = new THREE.DirectionalLight(0xffffff, 0.9); sun.position.set(10,30,10); scene.add(sun);
-
+textureCanvases = {};
+materialCache = {};
+    
     // ---------- World & player ----------
     const world = new VoxelWorld(WORLD_W, WORLD_H, WORLD_D, scene);
     const player = {
