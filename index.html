@@ -739,15 +739,6 @@ document.addEventListener('pointerlockchange', () => {
         lookArea.addEventListener('touchend', (e)=>{ for(const t of Array.from(e.changedTouches)){ if(t.identifier === lookTouchId){ lookTouchId = null; e.preventDefault(); return; } } }, {passive:false});
       }
 const leaveBtn = document.getElementById('leave-world-button');
-if (leaveBtn) {
-  leaveBtn.addEventListener('click', () => {
-    document.getElementById('start-screen').style.display = 'flex';
-    document.getElementById('hud').style.display = 'none';
-    document.getElementById('hotbar').style.display = 'none';
-    document.getElementById('inventory-panel').style.display = 'none';
-    // Optional: reset camera or pause game loop
-  });
-    }
 const confirmPopup = document.getElementById('confirm-leave');
 const confirmLeaveBtn = document.getElementById('confirm-leave-button');
 const cancelLeaveBtn = document.getElementById('cancel-leave-button');
@@ -769,7 +760,7 @@ confirmLeaveBtn.addEventListener('click', () => {
 cancelLeaveBtn.addEventListener('click', () => {
   confirmPopup.style.display = 'none';
 });
-      
+    
       // on-screen buttons
       const btnPlace = document.getElementById('btn-place'), btnBreak = document.getElementById('btn-break'), btnJump = document.getElementById('btn-jump');
       const btnInventory = document.getElementById('btn-inventory');
