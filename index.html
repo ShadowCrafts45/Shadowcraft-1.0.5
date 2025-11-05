@@ -161,14 +161,54 @@
   transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(0,0,0,0.4);
             }
-    
+    #world-select {
+  padding: 10px 14px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  font-family: 'Segoe UI', sans-serif;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  outline: none;
+}
+
+#world-select option {
+  background: #222;
+  color: #fff;
+}
+
+#load-world-button,
+#new-world-button {
+  padding: 10px 18px;
+  font-size: 16px;
+  background: linear-gradient(90deg, #ffd36b, #ff8a3d);
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  cursor: pointer;
+  font-weight: bold;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+#load-world-button:hover,
+#new-world-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+      
   </style>
 </head>
 <body>
   <div id="start-screen">
+    
     <select id="world-select"></select>
-<button id="load-world-button">Load World</button>
-<button id="new-world-button">Create New World</button>
+<div style="display: flex; gap: 12px; margin-top: 12px;">
+  <button id="load-world-button">▶️ Load World</button>
+  <button id="new-world-button">🌍 Create New World</button>
+</div>
     
   <div id="banner"></div>
   <h1>Shadow-craft</h1>
