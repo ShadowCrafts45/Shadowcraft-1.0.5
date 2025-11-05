@@ -141,6 +141,26 @@
   pointer-events: none;
   user-select: none;
     }
+ #leave-world-button {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 100;
+  padding: 10px 18px;
+  font-size: 16px;
+  background: linear-gradient(90deg, #ff8a3d, #ffd36b);
+  color: #000;
+  border: none;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  cursor: pointer;
+  font-weight: bold;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+#leave-world-button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            }
     
   </style>
 </head>
@@ -155,6 +175,7 @@
   <p>Explore your world in peaceful mode</p>
   <button id="start-button">Start Peaceful Mode</button>
   </div>
+  <button id="leave-world-button">⏹ Leave World</button>
   
   <div id="hud">Loading...</div>
   <div id="hint">Click to lock pointer (desktop). WASD to move, Space to jump, Q break. Placing remains disabled by default. Mobile: left joystick move, right drag look.</div>
@@ -618,7 +639,17 @@ document.addEventListener('pointerlockchange', () => {
         lookArea.addEventListener('touchmove', (e)=>{ if(lookTouchId === null) return; for(const t of Array.from(e.changedTouches)){ if(t.identifier === lookTouchId){ const dx = t.clientX - lastLookX, dy = t.clientY - lastLookY; player.yaw -= dx * 0.0035; player.pitch -= dy * 0.0035; player.pitch = clamp(player.pitch, -Math.PI/2 + 0.01, Math.PI/2 - 0.01); lastLookX = t.clientX; lastLookY = t.clientY; e.preventDefault(); return; } } }, {passive:false});
         lookArea.addEventListener('touchend', (e)=>{ for(const t of Array.from(e.changedTouches)){ if(t.identifier === lookTouchId){ lookTouchId = null; e.preventDefault(); return; } } }, {passive:false});
       }
-
+const leaveBtn = document.getElementById('leave-world-button');
+if (leaveBtn) {
+  leaveBtn.addEventListener('click', () => {
+    document.getElementById('start-screen').style.display = 'flex';
+    document.getElementById('hud').style.display = 'none';
+    document.getElementById('hotbar').style.display = 'none';
+    document.getElementById('inventory-panel').style.display = 'none';
+    // Optional: reset camera or pause game loop
+  });
+          }
+      
       // on-screen buttons
       const btnPlace = document.getElementById('btn-place'), btnBreak = document.getElementById('btn-break'), btnJump = document.getElementById('btn-jump');
       const btnInventory = document.getElementById('btn-inventory');
