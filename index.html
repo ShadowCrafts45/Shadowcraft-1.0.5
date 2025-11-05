@@ -146,6 +146,10 @@
 </head>
 <body>
   <div id="start-screen">
+    <select id="world-select"></select>
+<button id="load-world-button">Load World</button>
+<button id="new-world-button">Create New World</button>
+    
   <div id="banner"></div>
   <h1>Shadow-craft</h1>
   <p>Explore your world in peaceful mode</p>
@@ -187,6 +191,41 @@ document.getElementById('start-button').addEventListener('click', () => {
   document.getElementById('start-screen').style.display = 'none';
   // peaceful mode is default, so no extra logic needed yet
 });
+    const select = document.getElementById('world-select');
+const loadBtn = document.getElementById('load-world-button');
+const newBtn = document.getElementById('new-world-button');
+
+// Populate dropdown
+listWorlds().forEach(name => {
+  const opt = document.createElement('option');
+  opt.value = name;
+  opt.textContent = name;
+  select.appendChild(opt);
+});
+
+// Load selected world
+loadBtn.addEventListener('click', () => {
+  const name = select.value;
+  if (loadWorld(name, world, player)) {
+    document.getElementById('start-screen').style.display = 'none';
+  } else {
+    alert('World not found!');
+  }
+});
+
+// Create new world
+newBtn.addEventListener('click', () => {
+  const name = prompt('Enter new world name:');
+  if (!name) return;
+  saveWorld(name, world, player); // Save initial empty world
+  const opt = document.createElement('option');
+  opt.value = name;
+  opt.textContent = name;
+  select.appendChild(opt);
+  select.value = name;
+  document.getElementById('start-screen').style.display = 'none';
+});
+      
     function createPlayerModel() {
   const skinCanvas = makePlayerSkinCanvas();
   const skinTexture = new THREE.CanvasTexture(skinCanvas);
@@ -471,7 +510,30 @@ for (const id in BLOCKS) {
       const hint = document.getElementById('hint');
       hint.innerText = allowPlacing ? 'Placing enabled — E to place. Press P to toggle. Press Q to break' : 'Placing DISABLED — cannot place blocks. Press P to toggle. Press Q to break';
     }
+function saveWorld(name, world, player) {
+  const data = {
+    blocks: Array.from(world.blocks),
+    player: { x: player.pos.x, y: player.pos.y, z: player.pos.z }
+  };
+  localStorage.setItem(`world-${name}`, JSON.stringify(data));
+}
 
+function loadWorld(name, world, player) {
+  const raw = localStorage.getItem(`world-${name}`);
+  if (!raw) return false;
+  const data = JSON.parse(raw);
+  world.blocks = new Uint8Array(data.blocks);
+  world.updateMeshes();
+  player.pos.set(data.player.x, data.player.y, data.player.z);
+  return true;
+}
+
+function listWorlds() {
+  return Object.keys(localStorage)
+    .filter(k => k.startsWith('world-'))
+    .map(k => k.replace('world-', ''));
+    }
+    
     function setupControls(player, camera){
       const btnToggleView = document.getElementById('btn-toggle-view');
 if (btnToggleView) {
@@ -840,6 +902,9 @@ if (tgt && tgt.block) {
     camera.lookAt(player.pos.x + Math.sin(player.yaw), player.pos.y + Math.sin(player.pitch), player.pos.z + Math.cos(player.yaw));
     document.getElementById('hud').innerText = 'Loaded. Click to pointer-lock and play. Flatter terrain and collision fixes applied.';
     animate(performance.now());
+    if (select && select.value) {
+  saveWorld(select.value, world, player);
+    }
     
   </script>
 </body>
