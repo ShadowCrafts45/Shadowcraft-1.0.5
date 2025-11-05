@@ -138,6 +138,7 @@ const BLOCKS = {
   9: { name: 'Gold', color: 0xffd700, hardness: 2.0 },
   10: { name: 'Glass', color: 0xccccff, hardness: 0.2 }
 };
+    delete BLOCKS[10];
     
 let inventory = {};
 for (const id in BLOCKS) {
@@ -261,9 +262,8 @@ for (const id in BLOCKS) {
     function rebuildInventoryUI() {
   const grid = document.getElementById('inventory-grid');
   grid.innerHTML = '';
-  const keys = Object.keys(BLOCKS)
-  .map(x => parseInt(x))
-  .filter(id => id !== 10); // exclude Glass
+      const keys = Object.keys(BLOCKS).map(x => parseInt(x));
+      
                       
   for (const id of keys) {
     const slot = document.createElement('div');
