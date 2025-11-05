@@ -198,7 +198,56 @@
   transform: scale(1.05);
   box-shadow: 0 4px 12px rgba(0,0,0,0.4);
     }
-      
+   #confirm-leave {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+}
+
+#confirm-box {
+  background: #222;
+  padding: 20px 30px;
+  border-radius: 12px;
+  text-align: center;
+  color: #fff;
+  font-family: 'Segoe UI', sans-serif;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+#confirm-box p {
+  font-size: 18px;
+  margin-bottom: 20px;
+}
+
+#confirm-box button {
+  padding: 10px 18px;
+  font-size: 16px;
+  margin: 0 10px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: transform 0.2s ease;
+}
+
+#confirm-leave-button {
+  background: linear-gradient(90deg, #ffd36b, #ff8a3d);
+  color: #000;
+}
+
+#cancel-leave-button {
+  background: #555;
+  color: #fff;
+}
+
+#confirm-box button:hover {
+  transform: scale(1.05);
+  }
+   
   </style>
 </head>
 <body>
@@ -216,6 +265,13 @@
   <button id="start-button">Start Peaceful Mode</button>
   </div>
   <button id="leave-world-button">⏹ Leave World</button>
+  <div id="confirm-leave" style="display:none;">
+  <div id="confirm-box">
+    <p>Are you sure you want to leave this world?</p>
+    <button id="confirm-leave-button">✅ Yes, Leave World</button>
+    <button id="cancel-leave-button">❌ Cancel</button>
+  </div>
+  </div>
   
   <div id="hud">Loading...</div>
   <div id="hint">Click to lock pointer (desktop). WASD to move, Space to jump, Q break. Placing remains disabled by default. Mobile: left joystick move, right drag look.</div>
@@ -689,6 +745,28 @@ if (leaveBtn) {
     // Optional: reset camera or pause game loop
   });
           }
+      const leaveBtn = document.getElementById('leave-world-button');
+const confirmPopup = document.getElementById('confirm-leave');
+const confirmLeaveBtn = document.getElementById('confirm-leave-button');
+const cancelLeaveBtn = document.getElementById('cancel-leave-button');
+
+if (leaveBtn) {
+  leaveBtn.addEventListener('click', () => {
+    confirmPopup.style.display = 'flex';
+  });
+}
+
+confirmLeaveBtn.addEventListener('click', () => {
+  confirmPopup.style.display = 'none';
+  document.getElementById('start-screen').style.display = 'flex';
+  document.getElementById('hud').style.display = 'none';
+  document.getElementById('hotbar').style.display = 'none';
+  document.getElementById('inventory-panel').style.display = 'none';
+});
+
+cancelLeaveBtn.addEventListener('click', () => {
+  confirmPopup.style.display = 'none';
+});
       
       // on-screen buttons
       const btnPlace = document.getElementById('btn-place'), btnBreak = document.getElementById('btn-break'), btnJump = document.getElementById('btn-jump');
