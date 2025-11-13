@@ -6,3791 +6,971 @@
     <title>Dough3D - 3D Modeling App</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #1f2937;
+            color: #f3f4f6;
+            margin: 0;
+            overflow: hidden;
+        }
+        canvas {
+            display: block;
+            touch-action: none;
+        }
+        .panel-header {
+            padding: 8px 12px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            background-color: #374151;
+            border-bottom: 1px solid #4b5563;
+        }
+        .panel-content {
+            overflow-y: auto;
+            flex-grow: 1;
+            padding: 8px 0;
+        }
+        .menu-dropdown {
+            position: absolute;
+            top: 40px;
+            left: 0;
+            z-index: 20;
+            background-color: #374151;
+            border-radius: 6px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+            min-width: 150px;
+            padding: 4px 0;
+        }
+        .menu-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 0.875rem;
+            transition: background-color 0.15s;
+        }
+        .menu-item:hover {
+            background-color: #4b5563;
+        }
+        .outliner-item {
+            padding: 6px 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-left: 3px solid transparent;
+            transition: background-color 0.15s, border-color 0.15s;
+        }
+        .outliner-item:hover {
+            background-color: #4b5563;
+        }
+        .outliner-item.selected {
+            background-color: #1e3a8a;
+            border-left-color: #3b82f6;
+        }
+        .outliner-icon {
+            margin-right: 8px;
+            color: #9ca3af;
+        }
+        .inspector-row {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            padding: 4px 12px;
+            align-items: center;
+        }
+        .inspector-row label {
+            font-size: 0.75rem;
+            color: #d1d5db;
+        }
+        .inspector-row input[type="number"], .inspector-row select, .inspector-row input[type="text"] {
+            background-color: #1f2937;
+            border: 1px solid #4b5563;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            color: #f3f4f6;
+            width: 100%;
+            transition: border-color 0.15s;
+        }
+        .inspector-row input[type="number"]:focus, .inspector-row select:focus {
+            border-color: #3b82f6;
+            outline: none;
+        }
+        #timeline-scrubber {
+            display: flex;
+            align-items: center;
+            padding: 0 4px;
+        }
+        .keyframe-marker {
+            position: absolute;
+            width: 5px;
+            height: 80%;
+            background-color: #fcd34d;
+            border: 1px solid #b45309;
+            border-radius: 2px;
+            cursor: pointer;
+            top: 10%;
+            transition: background-color 0.15s;
+        }
+        .keyframe-marker:hover {
+            background-color: #f59e0b;
+        }
+        #camera-controls-guide {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 8px 12px;
+            border-radius: 8px;
+            color: #9ca3af;
+            font-size: 0.75rem;
+            z-index: 10;
+        }
+        #camera-controls-guide span {
+            display: block;
+            margin-bottom: 2px;
+        }
+    </style>
     <!-- Load Three.js and dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/TransformControls.js"></script>
-    <!-- Parenting Utility -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SceneUtils.js"></script>
-    <!-- Loaders & Exporters -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/OBJLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/libs/fflate.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FBXLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/GLTFExporter.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/exporters/OBJExporter.js"></script>
-    <!-- Font Awesome for Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    
-    <style>
-        /* Custom scrollbar for webkit browsers */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #2d3748; /* gray-800 */
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #4a5568; /* gray-600 */
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #718096; /* gray-500 */
-        }
-
-        /* Set base font */
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
-            background-color: #2d3748; /* gray-800 */
-            color: #e2e8f0; /* gray-300 */
-        }
-
-        /* Main 3-panel layout */
-        #main-layout {
-            display: grid;
-            grid-template-columns: 250px 1fr 300px;
-            height: calc(100vh - 64px); /* Full height minus top bars */
-        }
-        #viewport-container {
-            position: relative;
-        }
-
-        /* Panel styles */
-        .panel {
-            background-color: #1a202c; /* gray-900 */
-            border-color: #4a5568; /* gray-600 */
-            overflow-y: auto;
-        }
-        .panel-header {
-            background-color: #2d3748; /* gray-800 */
-            border-bottom: 1px solid #4a5568; /* gray-600 */
-        }
-        .panel-header-droppable {
-            cursor: pointer;
-        }
-        .panel-header-droppable.outliner-drag-over {
-            background-color: #4299e1; /* blue-500 */
-            color: white;
-        }
-
-        /* Outliner item */
-        .outliner-item {
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            border-top: 2px solid transparent; /* For drag-over */
-        }
-        .outliner-item.selected {
-            background-color: #4299e1; /* blue-500 */
-            color: white;
-        }
-        .outliner-item:not(.selected):hover {
-            background-color: #2d3748; /* gray-800 */
-        }
-        .outliner-item.outliner-drag-over {
-            border-top-color: #4299e1; /* blue-500 */
-        }
-        .outliner-item i {
-            width: 16px;
-            text-align: center;
-            flex-shrink: 0;
-        }
-        .outliner-item .name-span {
-            flex-grow: 1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .outliner-item .visibility-toggle {
-            margin-left: auto;
-            color: #a0aec0; /* gray-400 */
-            flex-shrink: 0;
-        }
-        .outliner-item .visibility-toggle:hover {
-            color: #e2e8f0; /* gray-200 */
-        }
-        .outliner-item .visibility-toggle.hidden-obj {
-            color: #718096; /* gray-500 */
-        }
-
-        /* Inspector */
-        .inspector-section-header {
-            background-color: #2d3748; /* gray-800 */
-            text-transform: uppercase;
-            font-size: 0.75rem;
-        }
-        .inspector-row {
-            display: grid;
-            grid-template-columns: auto 1fr;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 4px;
-        }
-        /* This selector is now more specific! */
-        /* It only targets labels WITHOUT a class attribute (i.e., our X, Y, Z labels) */
-        .inspector-row label:not([class]) {
-            width: 20px;
-            text-align: center;
-            font-weight: 500;
-        }
-        .inspector-row input[type="number"], 
-        .inspector-row input[type="color"],
-        .inspector-row input[type="range"] {
-            background-color: #2d3748; /* gray-800 */
-            border: 1px solid #4a5568; /* gray-600 */
-            border-radius: 4px;
-            padding: 2px 6px;
-            width: 100%;
-        }
-        .inspector-row input[type="number"] {
-            -moz-appearance: textfield;
-        }
-        .inspector-row input[type="color"] {
-            padding: 0;
-            height: 28px;
-        }
-        .inspector-row input[type="checkbox"] {
-             width: 16px;
-             height: 16px;
-             background-color: #2d3748; /* gray-800 */
-             border: 1px solid #4a5568; /* gray-600 */
-             border-radius: 4px;
-        }
-        .inspector-row input::-webkit-outer-spin-button,
-        .inspector-row input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        
-        /* Dropdown Menu */
-        .menu-container {
-            position: relative;
-        }
-        .menu-dropdown {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            background-color: #2d3748; /* gray-800 */
-            border: 1px solid #4a5568; /* gray-600 */
-            border-radius: 4px;
-            z-index: 100;
-            min-width: 200px;
-            padding: 4px;
-        }
-        .menu-item {
-            padding: 6px 12px;
-            cursor: pointer;
-            border-radius: 2px;
-        }
-        .menu-item:hover {
-            background-color: #4299e1; /* blue-500 */
-            color: white;
-        }
-        .menu-item.active-camera {
-            background-color: #3182ce; /* blue-600 */
-            color: white;
-            font-weight: bold;
-        }
-        .menu-item.disabled {
-            color: #718096; /* gray-500 */
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-        .menu-divider {
-            height: 1px;
-            background-color: #4a5568; /* gray-600 */
-            margin: 4px 0;
-        }
-
-        /* Modal Styles */
-        #about-modal-overlay, #render-modal-overlay, #library-modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 49;
-        }
-        #about-modal-content {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: #1a202c; /* gray-900 */
-            border-radius: 8px;
-            z-index: 50;
-            width: 90%;
-            max-width: 600px;
-            max-height: 80vh;
-        }
-        #about-modal-header {
-            padding: 16px 24px;
-            border-bottom: 1px solid #4a5568; /* gray-600 */
-        }
-        #about-modal-body {
-            padding: 24px;
-            overflow-y: auto;
-        }
-        #about-modal-body h3 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-top: 16px;
-            margin-bottom: 8px;
-        }
-        #about-modal-body p, #about-modal-body ul {
-            color: #a0aec0; /* gray-400 */
-            margin-bottom: 12px;
-        }
-        #about-modal-body li {
-            margin-left: 20px;
-            list-style-type: disc;
-        }
-        #about-modal-body kbd {
-            background-color: #2d3748; /* gray-800 */
-            border: 1px solid #4a5568; /* gray-600 */
-            border-radius: 4px;
-            padding: 2px 6px;
-            font-size: 0.875em;
-            box-shadow: 0 1px 1px rgba(0,0,0,0.2);
-        }
-
-        /* Render Modal */
-        #render-modal-content {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background-color: #1a202c; /* gray-900 */
-            border-radius: 8px;
-            z-index: 50;
-            width: 90%;
-            max-width: 800px;
-            max-height: 90vh;
-        }
-        #render-modal-body {
-            padding: 24px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 16px;
-        }
-        #render-canvas {
-            width: 100%;
-            height: auto;
-            aspect-ratio: 16 / 9;
-            background-color: #000;
-        }
-        #render-status {
-            color: #a0aec0; /* gray-400 */
-        }
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </head>
-<body class="overscroll-none">
-
-    <!-- Top Menu Bar -->
-    <nav class="h-8 bg-gray-900 border-b border-gray-600 flex items-center px-2 text-sm">
-        <div class="menu-container">
-            <button class="menu-trigger px-3 py-1 hover:bg-gray-700 rounded">File</button>
-            <div class="menu-dropdown hidden">
-                <div id="new-scene" class="menu-item">New Scene</div>
-                <div class="menu-divider"></div>
-                <div class="px-3 py-1 text-xs text-gray-400 uppercase">Save / Load</div>
-                <div id="save-scene" class="menu-item">Save Scene (.dough)</div>
-                <div id="open-scene" class="menu-item">Open Scene (.dough)</div>
-                <div class="menu-divider"></div>
-                <div class="px-3 py-1 text-xs text-gray-400 uppercase">Import</div>
-                <div id="import-model" class="menu-item">Import Model (.glb, .obj)</div>
-                <div class="menu-divider"></div>
-                <div class="px-3 py-1 text-xs text-gray-400 uppercase">Export</div>
-                <div id="export-glb" class="menu-item">Export as .glb</div>
-                <div id="export-obj" class="menu-item">Export as .obj</div>
-            </div>
-        </div>
-        <div class="menu-container">
-            <button class="menu-trigger px-3 py-1 hover:bg-gray-700 rounded">Edit</button>
-            <div class="menu-dropdown hidden">
-                <div id="undo" class="menu-item">Undo (<kbd>Ctrl</kbd>+<kbd>Z</kbd>)</div>
-                <div id="redo" class="menu-item">Redo (<kbd>Ctrl</kbd>+<kbd>Y</kbd>)</div>
-                <div class="menu-divider"></div>
-                <div id="cut" class="menu-item disabled">Cut (<kbd>Ctrl</kbd>+<kbd>X</kbd>)</div>
-                <div id="copy" class="menu-item disabled">Copy (<kbd>Ctrl</kbd>+<kbd>C</kbd>)</div>
-                <div id="paste" class="menu-item disabled">Paste (<kbd>Ctrl</kbd>+<kbd>V</kbd>)</div>
-            </div>
-        </div>
-        <div class="menu-container">
-            <button class="menu-trigger px-3 py-1 hover:bg-gray-700 rounded">Add</button>
-            <div class="menu-dropdown hidden">
-                <div class="px-3 py-1 text-xs text-gray-400 uppercase">Primitives</div>
-                <div class="menu-item add-primitive" data-type="cube">Mesh: Cube</div>
-                <div class="menu-item add-primitive" data-type="sphere">Mesh: Sphere</div>
-                <div class="menu-item add-primitive" data-type="cone">Mesh: Cone</div>
-                <div class="menu-item add-primitive" data-type="cylinder">Mesh: Cylinder</div>
-                <div class="menu-item add-primitive" data-type="torus">Mesh: Torus</div>
-                <div class="menu-item add-primitive" data-type="torusKnot">Mesh: Torus Knot</div>
-                <div class="menu-item add-primitive" data-type="icosahedron">Mesh: Icosahedron</div>
-                <div class="menu-item add-primitive" data-type="plane">Mesh: Plane</div>
-                <div class="menu-divider"></div>
-                <div class="px-3 py-1 text-xs text-gray-400 uppercase">Assets (Low Poly)</div>
-                <div class="menu-item" id="add-asset-tree">Asset: Tree</div>
-                <div class="menu-item" id="add-asset-house">Asset: House</div>
-                <div class="menu-item" id="add-asset-car">Asset: Car</div>
-                <div class="menu-item" id="add-asset-sword">Asset: Sword</div>
-                <div class="menu-item" id="add-asset-person">Asset: Person</div>
-                <div class="menu-item" id="add-asset-mug">Asset: Mug</div>
-                <div class="menu-item" id="add-asset-rocket">Asset: Rocket</div>
-                <div class="menu-item" id="add-asset-mountain">Asset: Mountain</div>
-                <div class="menu-divider"></div>
-                <div class="px-3 py-1 text-xs text-gray-400 uppercase">Lighting</div>
-                <div class="menu-item add-light" data-type="point">Light: Point Light</div>
-                <div class="menu-item add-light" data-type="spot">Light: Spot Light</div>
-                <div class="menu-item" id="add-ambient-light">Light: Ambient Light</div>
-                <div class="menu-divider"></div>
-                <div class="menu-item" id="add-camera">Camera</div>
-            </div>
-        </div>
-        <div class="menu-container">
-            <button class="menu-trigger px-3 py-1 hover:bg-gray-700 rounded">Render</button>
-            <div class="menu-dropdown hidden">
-                <div id="render-image" class="menu-item">Render Image</div>
-                <div class="menu-item disabled">Render Animation (TBD)</div>
-            </div>
-        </div>
-        <div class="menu-container">
-            <button class="menu-trigger px-3 py-1 hover:bg-gray-700 rounded">View</button>
-            <div class="menu-dropdown hidden">
-                <div class="px-3 py-1 text-xs text-gray-400 uppercase">Active Camera</div>
-                <div id="camera-list-menu">
-                    <!-- Dynamically populated -->
+<body>
+    <!-- Top Bar (Header) -->
+    <header class="h-10 bg-gray-800 shadow-md flex items-center justify-between px-4 z-10 relative">
+        <div class="flex items-center space-x-4">
+            <h1 class="text-xl font-bold text-blue-400">Dough3D</h1>
+            <!-- File Menu Dropdown -->
+            <div id="file-menu" class="relative">
+                <button class="text-sm hover:text-blue-300 transition-colors">File</button>
+                <div id="file-menu-dropdown" class="menu-dropdown hidden">
+                    <div id="new-scene" class="menu-item">New Scene</div>
+                    <div id="save-scene" class="menu-item">Save Scene</div>
+                    <div id="load-scene" class="menu-item">Load Scene</div>
+                    <div class="h-px bg-gray-600 my-1"></div>
+                    <div id="export-gltf" class="menu-item">Export GLTF</div>
+                    <div id="import-obj" class="menu-item">Import OBJ</div>
                 </div>
-                <div class="menu-divider"></div>
-                <div id="view-from-active" class="menu-item">View from Active Camera (<kbd>0</kbd>)</div>
-                <div id="lock-camera-view" class="menu-item">Lock Camera to View</div>
+            </div>
+            <!-- Add Menu Dropdown -->
+            <div id="add-menu" class="relative">
+                <button class="text-sm hover:text-blue-300 transition-colors">Add</button>
+                <div id="add-menu-dropdown" class="menu-dropdown hidden">
+                    <div id="add-cube" class="menu-item">Cube</div>
+                    <div id="add-sphere" class="menu-item">Sphere</div>
+                    <div id="add-plane" class="menu-item">Plane</div>
+                    <div class="h-px bg-gray-600 my-1"></div>
+                    <div id="add-dir-light" class="menu-item">Directional Light</div>
+                    <div id="add-ambient-light" class="menu-item">Ambient Light</div>
+                    <div class="h-px bg-gray-600 my-1"></div>
+                    <div id="add-spaceship" class="menu-item">Spaceship (Demo)</div>
+                    <div id="add-mountain" class="menu-item">Mountain (Demo)</div>
+                </div>
             </div>
         </div>
-        <div class="menu-container">
-            <button class="menu-trigger px-3 py-1 hover:bg-gray-700 rounded">Window</button>
-            <div class="menu-dropdown hidden">
-                <div id="toggle-fullscreen" class="menu-item">Toggle Fullscreen</div>
+        <!-- Render & Help Actions -->
+        <div class="flex items-center space-x-4">
+            <div id="render-menu" class="relative">
+                <button class="text-sm hover:text-blue-300 transition-colors">Render</button>
+                <div id="render-menu-dropdown" class="menu-dropdown right-0 left-auto hidden">
+                    <div id="render-image" class="menu-item">Render Image</div>
+                    <div id="render-animation" class="menu-item">Render Animation</div>
+                </div>
             </div>
+            <button id="show-help-modal" class="text-base w-8 h-8 flex items-center justify-center bg-gray-700 hover:bg-gray-600 rounded-full text-white" title="Show Help / Walkthrough">
+                <i class="fas fa-question"></i>
+            </button>
         </div>
-        <div class="menu-container">
-            <button class="menu-trigger px-3 py-1 hover:bg-gray-700 rounded">Help</button>
-            <div class="menu-dropdown hidden">
-                <div id="show-about" class="menu-item">About Dough3D</div>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Toolbar -->
-    <div class="h-8 bg-gray-800 border-b border-gray-600 flex items-center px-2 space-x-2">
-        <button id="tool-select" class="px-2 py-0.5 bg-blue-600 text-white rounded text-sm" title="Select (Q)"><i class="fas fa-mouse-pointer"></i></button>
-        <button id="tool-move" class="px-2 py-0.5 bg-gray-700 hover:bg-gray-600 rounded text-sm" title="Move (W)"><i class="fas fa-arrows-alt"></i></button>
-        <button id="tool-rotate" class="px-2 py-0.5 bg-gray-700 hover:bg-gray-600 rounded text-sm" title="Rotate (E)"><i class="fas fa-sync-alt"></i></button>
-        <button id="tool-scale" class="px-2 py-0.5 bg-gray-700 hover:bg-gray-600 rounded text-sm" title="Scale (R)"><i class="fas fa-expand-arrows-alt"></i></button>
-        
-        <!-- Mode Switcher -->
-        <div class="h-full border-l border-gray-600 mx-1"></div>
-        <select id="mode-switcher" class="bg-gray-700 text-sm rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:opacity-50" disabled>
-            <option value="OBJECT">Object Mode</option>
-            <option value="EDIT">Edit Mode</option>
-        </select>
-        
-        <!-- Shading Switcher -->
-        <div class="h-full border-l border-gray-600 mx-1"></div>
-        <select id="shading-switcher" class="bg-gray-700 text-sm rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-500">
-            <option value="RENDERED">Rendered</option>
-            <option value="SOLID">Solid</option>
-            <option value="WIREFRAME">Wireframe</option>
-        </select>
-    </div>
+    </header>
 
     <!-- Main Layout -->
-    <div id="main-layout">
+    <div id="main-layout" class="grid" style="grid-template-columns: 250px 1fr 300px; grid-template-rows: 1fr 120px; height: calc(100vh - 40px);">
         <!-- Left Panel: Outliner -->
-        <div id="outliner-panel" class="panel border-r">
-            <div id="outliner-header" class="panel-header p-2 panel-header-droppable">
-                <h2 class="font-bold text-sm uppercase">Scene Collection</h2>
-            </div>
-            <div id="outliner-list" class="p-1">
-                <!-- Outliner items will be dynamically inserted here -->
+        <div id="outliner-panel" class="flex flex-col bg-gray-800" style="grid-row: 1 / 3;">
+            <div class="panel-header">Outliner</div>
+            <div id="outliner-content" class="panel-content space-y-1 text-sm">
+                <!-- Scene objects will be listed here -->
             </div>
         </div>
 
         <!-- Center Panel: Viewport -->
-        <div id="viewport-container" class="bg-gray-700">
+        <div id="viewport-container" class="bg-gray-700 relative" style="grid-row: 1 / 2; grid-column: 2 / 3;">
             <!-- 3D Viewport will be attached here -->
+            <!-- Camera Controls Guide -->
+            <div id="camera-controls-guide">
+                <div class="text-sm font-bold text-blue-400 mb-1">Camera Controls</div>
+                <span><kbd class="px-1 bg-gray-700 rounded mr-1">Left Mouse</kbd> - Orbit</span>
+                <span><kbd class="px-1 bg-gray-700 rounded mr-1">Right Mouse</kbd> - Pan</span>
+                <span><kbd class="px-1 bg-gray-700 rounded mr-1">Mouse Wheel</kbd> - Zoom</span>
+            </div>
         </div>
 
         <!-- Right Panel: Inspector -->
-        <div id="inspector-panel" class="panel border-l">
-            <div class="panel-header p-2">
-                <h2 class="font-bold text-sm uppercase">Inspector</h2>
+        <div id="inspector-panel" class="flex flex-col bg-gray-800" style="grid-row: 1 / 3;">
+            <div class="panel-header">Inspector</div>
+            <div id="inspector-content" class="panel-content space-y-3">
+                <div class="p-4 text-center text-gray-400 text-sm">Select an object in the Outliner to inspect its properties.</div>
+                <!-- Properties will be dynamically inserted here -->
             </div>
-            <div id="inspector-content" class="p-2">
-                <!-- Inspector content will be dynamically inserted here -->
-                <div id="inspector-placeholder" class="text-gray-500 text-sm p-4 text-center">
-                    Select an object to inspect its properties.
+        </div>
+
+        <!-- Timeline Panel (New) -->
+        <div id="timeline-container" class="p-2" style="grid-row: 2 / 3; grid-column: 2 / 3; background-color: #1a202c; border-top: 1px solid #4a5568;">
+            <div class="flex items-center space-x-4 mb-2">
+                <h3 class="text-sm font-semibold uppercase text-gray-400">Animation Timeline</h3>
+                <div class="flex space-x-2">
+                    <button id="anim-play-pause" class="w-8 h-8 flex items-center justify-center bg-blue-600 hover:bg-blue-500 rounded text-white text-base transition-colors" title="Play/Pause"><i class="fas fa-play"></i></button>
+                    <button id="anim-stop" class="w-8 h-8 flex items-center justify-center bg-gray-700 hover:bg-gray-600 rounded text-white text-base transition-colors" title="Stop"><i class="fas fa-stop"></i></button>
+                    <button id="anim-set-keyframe" class="w-8 h-8 flex items-center justify-center bg-red-600 hover:bg-red-500 rounded text-white text-base transition-colors" title="Set Keyframe (K)"><i class="fas fa-key"></i></button>
                 </div>
             </div>
+            <div id="timeline-scrubber" class="flex-grow bg-gray-800 rounded relative cursor-pointer h-8 overflow-hidden">
+                <div id="scrubber-bar" class="absolute h-full w-0 bg-blue-400 opacity-50"></div>
+                <div id="keyframe-markers" class="absolute top-0 w-full h-full pointer-events-none">
+                    <!-- Keyframe markers go here -->
+                </div>
+                <div id="scrubber-handle"></div>
+            </div>
+            <div class="flex justify-between items-center text-xs mt-1">
+                <span id="current-frame-display">Frame: 0 / 100</span>
+                <span class="text-yellow-400">Tip: Press <kbd class="px-1 bg-yellow-700 rounded font-bold">K</kbd> to quickly set a keyframe!</span>
+            </div>
         </div>
     </div>
     
-    <!-- Hidden file input for opening scenes -->
-    <input type="file" id="file-opener" accept=".dough" class="hidden">
-    <!-- Hidden file input for importing models -->
-    <input type="file" id="model-importer" accept=".glb,.obj,.fbx" class="hidden">
-
-    <!-- About Modal -->
-    <div id="about-modal-overlay" class="hidden"></div>
-    <div id="about-modal-content" class="hidden flex flex-col">
-        <header id="about-modal-header" class="flex justify-between items-center">
-            <h2 class="text-xl font-bold">About Dough3D</h2>
-            <button id="about-close-x" class="text-gray-400 hover:text-white">&times;</button>
-        </header>
-        <section id="about-modal-body">
-            <p>Welcome to Dough3D! This is a lightweight, in-browser 3D modeling application built with HTML, Tailwind CSS, and Three.js.</p>
-            
-            <h3>Core Features</h3>
-            <ul>
-                <li>Move (<kbd>W</kbd>), Rotate (<kbd>E</kbd>), and Scale (<kbd>R</kbd>) objects with a gizmo.</li>
-                <li>Select objects by clicking them in the viewport or in the Scene Collection outliner.</li>
-                <li>Undo (<kbd>Ctrl</Z</kbd>) and Redo (<kbd>Ctrl</Y</kbd>) for most actions.</li>
-                <li>Copy (<kbd>Ctrl</C</kbd>), Cut (<kbd>Ctrl</X</kbd>), and Paste (<kbd>Ctrl</V</kbd>) objects.</li>
-                <li>Save your scene as a <kbd>.dough</kbd> (JSON) file and open it later.</li>
-                <li>Export your creation as <kbd>.glb</kbd> or <kbd>.obj</kbd> files.</li>
-            </ul>
-
-            <h3>Scene Collection (Outliner)</h3>
-            <ul>
-                <li>See a list of all objects in your scene.</li>
-                <li>**Rename Objects:** Double-click an object's name to give it a new one.</li>
-                <li>**Toggle Visibility:** Click the 👁️ icon to hide or show an object.</li>
-                <li>**Parenting:** Drag-and-drop an object onto another to make it a child. Drag an object onto the "Scene Collection" header to un-parent it.</li>
-            </ul>
-            
-            <h3>Edit Mode</h3>
-            <ul>
-                <li>Select a Mesh (like a Cube) and press <kbd>Tab</kbd> or use the dropdown to enter **Edit Mode**.</li>
-                <li>Click to select a single vertex (point).</li>
-                <li>Use the Move tool (<kbd>W</kbd>) to move the vertex and change the object's shape.</li>
-                <li>Vertex positions can be edited in the Inspector.</li>
-            </ul>
-            
-            <h3>Adding Objects (Add Menu)</h3>
-            <ul>
-                <li>Add 8 different mesh primitives, from cubes to torus knots.</li>
-                <li>Add **Low Poly Assets** like a tree or car. These are fully editable!</li>
-                <li>Add different light types to illuminate your scene.</li>
-                <li>Add a **Camera** to create specific shots for rendering.</li>
-            </ul>
-            
-            <h3>View Menu</h3>
-            <ul>
-                <li>Set any camera in your scene as the **Active Render Camera**.</li>
-                <li>The "Render Image" button will use this camera's perspective.</li>
-                <li>Press <kbd>0</kbd> or click "View from Active Camera" to snap your viewport to match the active camera's view.</li>
-                <li>Check **"Lock Camera to View"** to make your viewport controls move the active camera. This is perfect for framing shots!</li>
-            </ul>
-
-            <h3>Inspector</h3>
-            <ul>
-                <li>Modify an object's Position, Rotation, and Scale.</li>
-                <li>For lights, you can change Color and Intensity.</li>
-                <li>For meshes, you can change the material's Color, Roughness, and Metalness.</li>
-                <li>**Advanced Materials:** Control **Emissive** (glow) color, **Opacity** (transparency), and toggle **Wireframe** mode.</li>
-            </ul>
-
-            <h3>Importing (New!)</h3>
-            <ul>
-                <li>Use **File > Import Model** to load `.glb` or `.obj` files from your computer.</li>
-                <li>Imported models are automatically scaled and centered.</li>
-                <li>(Note: Imported models are not yet supported by Undo/Redo or the .dough save file.)</li>
-            </ul>
-            
-            <h3>Shading (New!)</h3>
-            <ul>
-                <li>Use the **Shading** dropdown in the toolbar to change the viewport.</li>
-                <li>**Rendered:** High-quality mode with lights and shadows.</li>
-                <li>**Solid:** Fast, unlit mode for focusing on shape and color.</li>
-                <li>**Wireframe:** Shows only the geometry lines.</li>
-            </ul>
-
-            <h3>Low Poly Models (New!)</h3>
-            <ul>
-                <li>The "Add" menu now includes a set of fast, low-poly models.</li>
-                <li>New models include: **Mug**, **Rocket**, and **Mountain**.</li>
-                <li>Since these are built from code, they load instantly.</li>
-                <li>They are fully compatible with **Edit Mode**, **Undo/Redo**, and **Save/Load**.</li>
-            </ul>
-
-            <h3>Rendering</h3>
-            <ul>
-                <li>Click **Render > Render Image** to generate a high-quality 1920x1080 image from your active camera's viewpoint.</li>
-                <li>You can save this render as a <kbd>.png</kbd> file from the render window.</li>
-            </ul>
-
-        </section>
-        <footer id="about-modal-footer">
-            <button id="about-close-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-white">Close</button>
-        </footer>
+    <!-- Custom Alert/Notification Container -->
+    <div id="notifications" class="fixed top-12 right-4 z-50 space-y-2">
+        <!-- Notifications appear here -->
     </div>
-    
-    <!-- Library Modal -->
-    <div id="library-modal-overlay" class="hidden"></div>
-    <div id="library-modal-content" class="hidden flex flex-col">
-        <header id="about-modal-header" class="flex justify-between items-center"> <!-- Reusing style -->
-            <h2 class="text-xl font-bold">Model Library (External)</h2>
-            <button id="library-close-x" class="text-gray-400 hover:text-white">&times;</button>
-        </header>
-        <section id="library-modal-body">
-             <!-- Library items will be populated here by JS -->
-        </section>
-        <footer id="about-modal-footer"> <!-- Reusing style -->
-            <button id="library-close-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-white">Close</button>
-        </footer>
-        <div id="library-loading" class="hidden">
-            Loading...
+
+    <!-- Help/Walkthrough Modal -->
+    <div id="help-modal" class="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 hidden">
+        <div class="bg-gray-800 rounded-xl max-w-2xl w-full p-8 shadow-2xl transform transition-all scale-100">
+            <div class="flex justify-between items-center border-b pb-3 mb-4 border-gray-700">
+                <h2 class="text-2xl font-bold text-blue-400">Welcome to Dough3D!</h2>
+                <button id="close-help-modal" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            <div class="text-gray-300 space-y-4 text-sm">
+                <p>This is a simplified 3D environment designed for easy creation and animation. Here's a quick map of the interface:</p>
+                <h3 class="font-semibold text-lg text-white">1. Core Panels:</h3>
+                <ul class="list-disc list-inside space-y-2 pl-4">
+                    <li><span class="font-bold text-blue-300">Outliner (Left):</span> Lists all objects in your scene (meshes, lights, camera). Click an object to select it.</li>
+                    <li><span class="font-bold text-blue-300">Viewport (Center):</span> Your 3D world. Use the mouse to navigate (Orbit/Pan/Zoom, see guide bottom-left). Use the **Gizmo** (Move/Rotate/Scale tool) to manipulate selected objects.</li>
+                    <li><span class="font-bold text-blue-300">Inspector (Right):</span> Displays and allows you to edit the exact numeric properties (Position, Material, Name) of the currently selected object.</li>
+                </ul>
+                <h3 class="font-semibold text-lg text-white border-t pt-3 border-gray-700">2. Animation Made Easy:</h3>
+                <p>The <span class="font-bold text-red-300">Timeline (Bottom Center)</span> lets you create "insane things" with animation:</p>
+                <ul class="list-disc list-inside space-y-2 pl-4">
+                    <li>Move the **Scrubber** (blue line) to the frame where you want a change to occur.</li>
+                    <li>Move or rotate your selected object using the **Gizmo**.</li>
+                    <li>Press the **<i class="fas fa-key text-red-400"></i> Set Keyframe** button (or press the **K** key!) to record that object's position, rotation, and scale at the current frame.</li>
+                    <li>The application will automatically animate (interpolate) the movement between your keyframes!</li>
+                </ul>
+                <p class="text-center italic mt-6 pt-4 border-t border-gray-700">Start by clicking 'Add' in the top bar!</p>
+            </div>
+            <div class="flex justify-end mt-6">
+                <button id="modal-start-creating" class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg transition-colors">Start Creating!</button>
+            </div>
         </div>
     </div>
 
-    <!-- Render Modal -->
-    <div id="render-modal-overlay" class="hidden"></div>
-    <div id="render-modal-content" class="hidden flex flex-col">
-        <header id="about-modal-header" class="flex justify-between items-center"> <!-- Reusing style -->
-            <h2 class="text-xl font-bold">Render Result (1920x1080)</h2>
-            <button id="render-close-x" class="text-gray-400 hover:text-white">&times;</button>
-        </header>
-        <section id="render-modal-body">
-             <div id="render-status">Rendering... Please wait.</div>
-             <canvas id="render-canvas" class="hidden" width="1920" height="1080"></canvas>
-        </section>
-        <footer id="about-modal-footer" class="flex justify-between items-center"> <!-- Reusing style -->
-            <button id="save-render-btn" class="px-4 py-2 bg-green-600 hover:bg-green-500 rounded text-white disabled:opacity-50" disabled>Save as .png</button>
-            <button id="render-close-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-white">Close</button>
-        </footer>
-    </div>
+    <script type="module">
+        // Global variables for THREE.js and state
+        let scene, camera, renderer, orbitControls, transformControls;
+        let objects = [];
+        let selectedObject = null;
+        let geometryUUIDMap = new Map();
 
-
-<script type="module">
-    // --- Global Variables ---
-    let scene, camera, renderer, orbitControls, transformControls;
-    let gizmoToolbar, selectButton, moveButton, rotateButton, scaleButton, modeSwitcher, shadingSwitcher;
-    let outlinerList, inspectorContent, inspectorPlaceholder;
-    let aboutModalOverlay, aboutModalContent, aboutCloseX, aboutCloseBtn;
-    let renderModalOverlay, renderModalContent, renderCloseX, renderCloseBtn, renderCanvas, renderStatus, saveRenderBtn;
-    
-    // --- FIX: UI elements for Library Modal (even if hidden) ---
-    let libraryModalOverlay, libraryModalContent, libraryCloseX, libraryCloseBtn, libraryModalBody, libraryLoading;
-    let modelImporter; // For importing
-    
-    let gridHelper, axesHelper; // Make helpers global to hide them
-
-    let selectedObject = null;
-    let objects = []; // Master list of all interactable objects
-    let activeRenderCamera; // The camera used for the Render Image modal
-    let dragObject = null; // The object being dragged in the outliner
-    
-    let isCameraViewLocked = false;
-    let lockCameraViewMenuItem;
-    
-    // --- Edit Mode State ---
-    let currentMode = 'OBJECT'; // 'OBJECT' or 'EDIT'
-    let vertexPointsObject = null; // THREE.Points object for vertices
-    let selectedVertexIndex = null; // Index of the selected vertex
-    
-    const raycaster = new THREE.Raycaster();
-    const mouse = new THREE.Vector2();
-
-    // Undo/Redo
-    const history = [];
-    let historyIndex = -1;
-    let isUndoingRedoing = false; // Flag to prevent history loops
-
-    // Clipboard
-    let clipboard = null;
-    let clipboardOperation = null; // 'cut' or 'copy'
-    
-    // --- Materials Cache ---
-    // This prevents creating new materials for every single object
-    const materials = {
-        default: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.5, metalness: 0.5 }),
-        wood: new THREE.MeshStandardMaterial({ color: 0x8B4513, roughness: 0.8, metalness: 0.1 }),
-        leaves: new THREE.MeshStandardMaterial({ color: 0x008000, roughness: 0.8, metalness: 0.0 }),
-        carBody: new THREE.MeshStandardMaterial({ color: 0xff0000, roughness: 0.3, metalness: 0.8 }),
-        carWindow: new THREE.MeshStandardMaterial({ color: 0xADD8E6, roughness: 0.1, metalness: 0.9, opacity: 0.6, transparent: true }),
-        carWheel: new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.9, metalness: 0.1 }),
-        houseWall: new THREE.MeshStandardMaterial({ color: 0xF5DEB3, roughness: 0.9, metalness: 0.1 }),
-        houseRoof: new THREE.MeshStandardMaterial({ color: 0xA52A2A, roughness: 0.8, metalness: 0.1 }),
-        swordBlade: new THREE.MeshStandardMaterial({ color: 0xC0C0C0, roughness: 0.2, metalness: 1.0 }),
-        swordHilt: new THREE.MeshStandardMaterial({ color: 0xDAA520, roughness: 0.4, metalness: 0.8 }),
-        personSkin: new THREE.MeshStandardMaterial({ color: 0xFFDBAC, roughness: 0.7, metalness: 0.1 }),
-        personShirt: new THREE.MeshStandardMaterial({ color: 0x0000FF, roughness: 0.7, metalness: 0.1 }),
-        personPants: new THREE.MeshStandardMaterial({ color: 0x4B0082, roughness: 0.7, metalness: 0.1 }),
-        mug: new THREE.MeshStandardMaterial({ color: 0xeeeeee, roughness: 0.1, metalness: 0.2 }),
-        rocketBody: new THREE.MeshStandardMaterial({ color: 0xcccccc, roughness: 0.2, metalness: 0.9 }),
-        rocketFin: new THREE.MeshStandardMaterial({ color: 0xff0000, roughness: 0.5, metalness: 0.5 }),
-        mountainRock: new THREE.MeshStandardMaterial({ color: 0x8D7966, roughness: 0.9, metalness: 0.1, flatShading: true }),
-        mountainSnow: new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.8, metalness: 0.1, flatShading: true }),
-    };
-    
-    // --- Loaders ---
-    let gltfLoader, objLoader, fbxLoader;
-
-
-    // --- Core THREE.js Setup ---
-    function init() {
-        // Get container
-        const container = document.getElementById('viewport-container');
-
-        // Scene
-        scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x333333);
-
-        // Camera
-        camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-        camera.position.set(5, 5, 5);
-        camera.lookAt(0, 0, 0);
-        camera.name = "ViewportCamera";
-        scene.add(camera);
-        objects.push(camera); // Add to master list
-        activeRenderCamera = camera; // Set as default render camera
-
-        // Renderer
-        renderer = new THREE.WebGLRenderer({ antias: true, preserveDrawingBuffer: true }); // preserveDrawingBuffer for rendering
-        renderer.setSize(container.clientWidth, container.clientHeight);
-        renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.shadowMap.enabled = true;
-        container.appendChild(renderer.domElement);
-
-        // --- Lights ---
-        // Add a default ambient light
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-        ambientLight.name = "AmbientLight";
-        scene.add(ambientLight);
-        objects.push(ambientLight); // Add to master list
-
-        // Add a default directional light
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-        directionalLight.position.set(5, 10, 7.5);
-        directionalLight.castShadow = true;
-        directionalLight.name = "DirectionalLight";
-        scene.add(directionalLight);
-        objects.push(directionalLight); // Add to master list
-        
-        // --- Controls ---
-        // Orbit Controls
-        orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
-        orbitControls.enableDamping = true;
-        orbitControls.dampingFactor = 0.05;
-        orbitControls.screenSpacePanning = false;
-        orbitControls.minDistance = 1;
-        orbitControls.maxDistance = 500;
-        orbitControls.addEventListener('change', () => {
-            if (isCameraViewLocked && activeRenderCamera && activeRenderCamera !== camera) { // Don't lock to viewport cam
-                activeRenderCamera.position.copy(camera.position);
-                activeRenderCamera.quaternion.copy(camera.quaternion);
-                if (activeRenderCamera.helper) {
-                    activeRenderCamera.helper.update();
-                }
-            }
-            render();
-        });
-
-        // Transform Controls (Gizmo)
-        transformControls = new THREE.TransformControls(camera, renderer.domElement);
-        transformControls.addEventListener('dragging-changed', (event) => {
-            orbitControls.enabled = !event.value;
-            if (!event.value) { // Drag finished
-                // On drag end, record history
-                if (currentMode === 'OBJECT' && selectedObject) {
-                    recordHistory({
-                        type: 'transform',
-                        objectUUID: selectedObject.uuid,
-                        transform: {
-                            position: selectedObject.position.clone(),
-                            rotation: selectedObject.rotation.clone(),
-                            scale: selectedObject.scale.clone(),
-                        }
-                    });
-                } else if (currentMode === 'EDIT' && selectedVertexIndex !== null) {
-                    recordHistory({
-                        type: 'vertexMove',
-                        objectUUID: selectedObject.uuid,
-                        vertexIndex: selectedVertexIndex,
-                        position: selectedObject.geometry.attributes.position.array.slice(selectedVertexIndex*3, selectedVertexIndex*3+3)
-                    });
-                }
-            }
-        });
-        transformControls.addEventListener('objectChange', () => {
-             if (currentMode === 'OBJECT') {
-                updateInspector();
-            } else if (currentMode === 'EDIT' && selectedVertexIndex !== null) {
-                // Update vertex position in geometry
-                const pos = selectedObject.geometry.attributes.position;
-                const vertex = new THREE.Vector3();
-                vertex.fromBufferAttribute(pos, selectedVertexIndex);
-                
-                // Gizmo is in world space, but vertex is in local space
-                // We need to transform the gizmo's position to local space
-                
-                // Get world position of gizmo
-                const gizmoWorldPos = transformControls.position.clone();
-                
-                // Convert to local space of the object
-                const gizmoLocalPos = selectedObject.worldToLocal(gizmoWorldPos);
-
-                pos.setXYZ(selectedVertexIndex, gizmoLocalPos.x, gizmoLocalPos.y, gizmoLocalPos.z);
-                pos.needsUpdate = true;
-                
-                // Update the vertex helper points
-                updateVertexPoints();
-                
-                // Update the inspector
-                updateInspector();
-            }
-            render();
-        });
-        scene.add(transformControls);
-
-        // --- Helpers ---
-        gridHelper = new THREE.GridHelper(100, 100);
-        scene.add(gridHelper);
-        axesHelper = new THREE.AxesHelper(5);
-        scene.add(axesHelper);
-        
-        // --- Loaders ---
-        gltfLoader = new THREE.GLTFLoader();
-        objLoader = new THREE.OBJLoader();
-        fbxLoader = new THREE.FBXLoader();
-
-        // --- Event Listeners ---
-        window.addEventListener('resize', onWindowResize);
-        renderer.domElement.addEventListener('click', onViewportClick);
-        
-        // --- FIX: Initialize UI *before* adding the first object ---
-        initToolbar();
-        initOutliner();
-        initInspector();
-        initMenus();
-        initModals();
-        initHotkeys();
-        
-        // --- Initial Object ---
-        addPrimitive('cube', {}, false); // Add a cube after UI is initialized
-
-        // --- Final Steps ---
-        updateOutliner();
-        updateInspector();
-        updateCameraMenu();
-        render();
-        animate();
-    }
-
-    // Main animation loop
-    function animate() {
-        requestAnimationFrame(animate);
-        orbitControls.update();
-        render();
-    }
-
-    // Render function
-    function render() {
-        renderer.render(scene, camera);
-    }
-
-    // Handle window resizing
-    function onWindowResize() {
-        const container = document.getElementById('viewport-container');
-        if (!container) return;
-        
-        const width = container.clientWidth;
-        const height = container.clientHeight;
-
-        camera.aspect = width / height;
-        camera.updateProjectionMatrix();
-        renderer.setSize(width, height);
-        render();
-    }
-    
-    // Handle forced full resize
-    function forceResize() {
-        // This is a hacky way to force the container to recalculate its size
-        const container = document.getElementById('viewport-container');
-        container.style.display = 'none';
-        setTimeout(() => {
-            container.style.display = 'block';
-            onWindowResize();
-        }, 0);
-    }
-    
-    // --- Scene Management ---
-    function clearScene() {
-        // Detach gizmo
-        deselectAll();
-
-        // Remove all objects from scene and list
-        for (let i = objects.length - 1; i >= 0; i--) {
-            const obj = objects[i];
-            scene.remove(obj);
-            if(obj.helper) scene.remove(obj.helper);
-        }
-        objects = [];
-        
-        // Clear history
-        history.length = 0;
-        historyIndex = -1;
-        updateEditMenu();
-
-        // Re-add default camera
-        camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000); // Temp aspect
-        camera.position.set(5, 5, 5);
-        camera.lookAt(0, 0, 0);
-        camera.name = "ViewportCamera";
-        scene.add(camera);
-        objects.push(camera);
-        activeRenderCamera = camera;
-        onWindowResize(); // Fix aspect
-        
-        // Re-attach controls to new camera
-        orbitControls.object = camera;
-        transformControls.camera = camera;
-
-        updateOutliner();
-        updateInspector();
-        updateCameraMenu();
-        render();
-    }
-    
-    // --- Object Selection ---
-    function onViewportClick(event) {
-        // Calculate mouse position in normalized device coordinates
-        const bounds = event.target.getBoundingClientRect();
-        mouse.x = ((event.clientX - bounds.left) / bounds.width) * 2 - 1;
-        mouse.y = -((event.clientY - bounds.top) / bounds.height) * 2 + 1;
-
-        // Update the picking ray with the camera and mouse position
-        raycaster.setFromCamera(mouse, camera);
-
-        // --- EDIT MODE ---
-        if (currentMode === 'EDIT' && selectedObject && selectedObject.isMesh) {
-            if (!vertexPointsObject) return; // No vertices to click
-            
-            // Raycast against vertices
-            raycaster.params.Points.threshold = 0.2; // Increased click radius
-            const intersects = raycaster.intersectObject(vertexPointsObject);
-            
-            if (intersects.length > 0) {
-                // Sort by distance
-                intersects.sort((a, b) => a.distanceToRay - b.distanceToRay);
-                const vertexIndex = intersects[0].index;
-                selectVertex(vertexIndex);
-            } else {
-                selectVertex(null); // Clicked off a vertex
-            }
-            return; // Stop here, don't try to select objects
-        }
-        
-        // --- OBJECT MODE ---
-        const intersects = raycaster.intersectObjects(objects.filter(o => o.isMesh || o.isLight || o.isCamera || o.isGroup), true);
-
-        if (intersects.length > 0) {
-            let clickedObject = intersects[0].object;
-            // Traverse up to find the main group/object if it's part of one
-            while (clickedObject.parent && clickedObject.parent !== scene) {
-                // Check if parent is in our master list (e.g., a Mesh, Light, or Camera, or Group)
-                if (objects.includes(clickedObject.parent)) {
-                    clickedObject = clickedObject.parent;
-                    break;
-                }
-                // Handle clicking helpers (CameraHelper, etc.)
-                if (clickedObject.isCameraHelper) {
-                    clickedObject = clickedObject.camera; // Get the camera itself
-                    break;
-                }
-                if (clickedObject.isPointLightHelper || clickedObject.isSpotLightHelper) {
-                    clickedObject = clickedObject.light;
-                    break;
-                }
-                clickedObject = clickedObject.parent;
-            }
-            
-            // FIX: Check if the found object is one we manage
-            if (objects.includes(clickedObject)) {
-                // NEW BEHAVIOR: Click on an already-selected object to deselect it
-                if (clickedObject === selectedObject) {
-                    deselectAll();
-                } else {
-                    selectObject(clickedObject);
-                }
-            } else {
-                // Clicked on something, but not a selectable object
-                deselectAll();
-            }
-        } else {
-            // Clicked on empty space
-            deselectAll();
-        }
-    }
-
-    function selectObject(object) {
-        // if (selectedObject === object) return; // Removed this line to allow re-click logic
- 
-         // Deselect previous
-         deselectAll();
-
-        // Select new
-        selectedObject = object;
-        
-        // Attach gizmo to movable objects
-        if (selectedObject && (selectedObject.isMesh || selectedObject.isLight || selectedObject.isCamera || selectedObject.isGroup)) {
-            transformControls.attach(selectedObject);
-            setTool('translate'); // Default to move tool
-        }
-        
-        // Update Edit Mode UI
-        if (selectedObject && (selectedObject.isMesh || (selectedObject.isGroup && findFirstMesh(selectedObject)))) {
-            modeSwitcher.disabled = false;
-        } else {
-            modeSwitcher.disabled = true;
-            setMode('OBJECT'); // Force object mode
+        // Global Utility for Notifications
+        function notify(message, type = 'info', duration = 3000) {
+            const container = document.getElementById('notifications');
+            const color = type === 'error' ? 'bg-red-600' : type === 'success' ? 'bg-green-600' : 'bg-blue-600';
+            const icon = type === 'error' ? 'fas fa-exclamation-circle' : type === 'success' ? 'fas fa-check-circle' : 'fas fa-info-circle';
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `p-3 rounded-lg shadow-xl text-white flex items-center space-x-2 opacity-0 transition-opacity duration-300 ${color}`;
+            alertDiv.innerHTML = `<i class="${icon}"></i> <span>${message}</span>`;
+            container.appendChild(alertDiv);
+            setTimeout(() => alertDiv.style.opacity = 1, 10);
+            setTimeout(() => {
+                alertDiv.style.opacity = 0;
+                setTimeout(() => container.removeChild(alertDiv), 300);
+            }, duration);
         }
 
-        // Update UI
-        updateOutliner();
-        updateInspector();
-        updateEditMenu();
-        render();
-    }
+        // --- Animation State ---
+        let animationData = {};
+        let currentFrame = 0;
+        const MAX_FRAME = 100;
+        const FRAME_RATE = 30;
+        let isPlaying = false;
+        let lastTime = 0;
 
-    function deselectAll() {
-        setMode('OBJECT'); // Always exit Edit Mode on deselect
-        selectedObject = null;
-        transformControls.detach();
-        if (modeSwitcher) { // Add check for safety
-            modeSwitcher.disabled = true;
-        }
-        
-        // Update UI
-        updateOutliner();
-        updateInspector();
-        updateEditMenu();
-        render();
-    }
-    
-    function deleteObject(object, recordHistoryFlag = true) {
-        if (!object) return;
-        
-        // Don't delete the main viewport camera
-        if (object === camera) return;
-        
-        const objIndex = objects.indexOf(object);
-        if (objIndex === -1) return;
-        
-        if (recordHistoryFlag) {
-             recordHistory({
-                type: 'delete',
-                object: serializeObject(object),
-                index: objIndex,
+        // UI Elements (Animation/Help)
+        let playPauseBtn, stopBtn, setKeyframeBtn, scrubberHandle, scrubberBar, keyframeMarkers, currentFrameDisplay;
+        let helpModal, showHelpBtn, closeHelpBtn, modalStartBtn;
+
+        // --- Core Functions ---
+
+        function init() {
+            // Setup Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x272727);
+            scene.fog = new THREE.Fog(0x272727, 50, 150);
+            // Setup Camera
+            const viewportContainer = document.getElementById('viewport-container');
+            camera = new THREE.PerspectiveCamera(75, viewportContainer.clientWidth / viewportContainer.clientHeight, 0.1, 1000);
+            camera.position.set(5, 5, 5);
+            camera.name = "Camera";
+            objects.push(camera);
+            // Setup Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(viewportContainer.clientWidth, viewportContainer.clientHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            viewportContainer.appendChild(renderer.domElement);
+            // Setup Controls
+            orbitControls = new THREE.OrbitControls(camera, renderer.domElement);
+            orbitControls.enableDamping = true;
+            orbitControls.dampingFactor = 0.05;
+            // Setup Transform Controls (Gizmo)
+            transformControls = new THREE.TransformControls(camera, renderer.domElement);
+            scene.add(transformControls);
+            transformControls.addEventListener('dragging-changed', function (event) {
+                orbitControls.enabled = !event.value;
             });
-        }
-        
-        if (selectedObject === object) {
-            deselectAll();
-        }
-        
-        // If this was the active render camera, reset to default
-        if (activeRenderCamera === object) {
-            activeRenderCamera = camera;
-            updateCameraMenu();
-        }
-        
-        // Unparent all children before deleting
-        if (object.children.length > 0) {
-            // Must iterate over a static copy, as detaching modifies the children array
-            [...object.children].forEach(child => {
-                if (objects.includes(child)) { // Only unparent objects we manage
-                     THREE.SceneUtils.detach(child, object, scene);
+            transformControls.addEventListener('objectChange', function () {
+                if (selectedObject) {
+                    updateInspector(selectedObject);
                 }
             });
+            // Set up UI listeners (Crucial fix from last iteration)
+            initUIListeners();
+            // Initial Geometry and Material Definitions
+            setupMaterials();
+            addInitialObjects();
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize, false);
+            // Start the animation loop
+            animate();
         }
 
-        // Remove from scene and list
-        scene.remove(object);
-        if (object.helper) scene.remove(object.helper);
-        objects.splice(objIndex, 1);
-        
-        // If we deleted a child, remove it from master list too
-        if (object.isGroup) {
-            object.traverse(child => {
-                const childIndex = objects.indexOf(child);
-                if (childIndex > -1) {
-                    objects.splice(childIndex, 1);
-                }
-            });
-        }
-        
-        updateOutliner();
-        updateInspector();
-        updateCameraMenu(); // In case a camera was deleted
-        render();
-    }
-
-    // --- Toolbar ---
-    function initToolbar() {
-        gizmoToolbar = document.getElementById('toolbar');
-        selectButton = document.getElementById('tool-select');
-        moveButton = document.getElementById('tool-move');
-        rotateButton = document.getElementById('tool-rotate');
-        scaleButton = document.getElementById('tool-scale');
-        modeSwitcher = document.getElementById('mode-switcher');
-        shadingSwitcher = document.getElementById('shading-switcher');
-
-        selectButton.addEventListener('click', () => setTool('select'));
-        moveButton.addEventListener('click', () => setTool('translate'));
-        rotateButton.addEventListener('click', () => setTool('rotate'));
-        scaleButton.addEventListener('click', () => setTool('scale'));
-        
-        modeSwitcher.addEventListener('change', (e) => {
-            setMode(e.target.value);
-        });
-        
-        shadingSwitcher.addEventListener('change', (e) => {
-            setShadingMode(e.target.value);
-        });
-    }
-
-    function setTool(tool) {
-        // Reset all button styles
-        selectButton.classList.remove('bg-blue-600');
-        moveButton.classList.remove('bg-blue-600');
-        rotateButton.classList.remove('bg-blue-600');
-        scaleButton.classList.remove('bg-blue-600');
-        selectButton.classList.add('bg-gray-700', 'hover:bg-gray-600');
-        moveButton.classList.add('bg-gray-700', 'hover:bg-gray-600');
-        rotateButton.classList.add('bg-gray-700', 'hover:bg-gray-600');
-        scaleButton.classList.add('bg-gray-700', 'hover:bg-gray-600');
-
-        transformControls.setMode(tool);
-
-        // Highlight active button
-        let activeButton;
-        switch (tool) {
-            case 'translate':
-                activeButton = moveButton;
-                transformControls.setMode('translate');
-                transformControls.enabled = true;
-                break;
-            case 'rotate':
-                activeButton = rotateButton;
-                transformControls.setMode('rotate');
-                transformControls.enabled = true;
-                break;
-            case 'scale':
-                activeButton = scaleButton;
-                transformControls.setMode('scale');
-                transformControls.enabled = true;
-                break;
-            case 'select':
-            default:
-                activeButton = selectButton;
-                transformControls.setMode('translate'); // Keep gizmo visible but disable it
-                transformControls.enabled = false;
-                break;
+        // Setup initial materials for quick object creation
+        const materials = {};
+        function setupMaterials() {
+            materials.default = new THREE.MeshPhongMaterial({ color: 0xcccccc, shininess: 30 });
+            materials.ground = new THREE.MeshPhongMaterial({ color: 0x4a4a4a, side: THREE.DoubleSide });
+            materials.lightHelper = new THREE.MeshBasicMaterial({ color: 0xffffee });
+            materials.mountainRock = new THREE.MeshLambertMaterial({ color: 0x888888, flatShading: true });
+            materials.mountainSnow = new THREE.MeshLambertMaterial({ color: 0xeeeeee, flatShading: true });
+            materials.spaceshipBody = new THREE.MeshPhongMaterial({ color: 0x3b82f6, flatShading: true });
+            materials.spaceshipFin = new THREE.MeshPhongMaterial({ color: 0xef4444, flatShading: true });
         }
 
-        activeButton.classList.add('bg-blue-600');
-        activeButton.classList.remove('bg-gray-700', 'hover:bg-gray-600');
-        
-        // Handle tool availability in Edit Mode
-        if (currentMode === 'EDIT') {
-            if (tool === 'rotate' || tool === 'scale') {
-                rotateButton.disabled = true;
-                scaleButton.disabled = true;
-                transformControls.enabled = false; // Can't rotate/scale single vertex
-            } else {
-                rotateButton.disabled = false;
-                scaleButton.disabled = false;
-            }
-        } else {
-             rotateButton.disabled = false;
-             scaleButton.disabled = false;
-        }
-    }
-    
-    // --- Shading Mode ---
-    function setShadingMode(mode) {
-        // First, reset all objects to default 'Rendered' state
-        scene.traverse(obj => {
-            if (obj.isMesh && obj.userData.originalMaterial) {
-                obj.material = obj.userData.originalMaterial;
-                delete obj.userData.originalMaterial;
-            }
-            if (obj.isLight || obj.isGridHelper || obj.isAxesHelper) {
-                obj.visible = true;
-            }
-        });
-        renderer.shadowMap.enabled = true;
-        
-        switch (mode) {
-            case 'RENDERED':
-                // Already reset to this state
-                break;
-            case 'SOLID':
-                renderer.shadowMap.enabled = false;
-                scene.traverse(obj => {
-                    if (obj.isMesh) {
-                        if (!obj.userData.originalMaterial) {
-                            obj.userData.originalMaterial = obj.material;
-                        }
-                        const newMat = new THREE.MeshBasicMaterial();
-                        if (obj.material.color) {
-                            newMat.color.copy(obj.material.color);
-                        }
-                        if (obj.material.map) {
-                            newMat.map = obj.material.map;
-                        }
-                        newMat.wireframe = obj.material.wireframe; // Preserve wireframe setting
-                        obj.material = newMat;
-                    }
-                    if (obj.isLight && !obj.isAmbientLight) {
-                        obj.visible = false; // Hide lights
-                    }
-                });
-                break;
-            case 'WIREFRAME':
-                renderer.shadowMap.enabled = false;
-                scene.traverse(obj => {
-                    if (obj.isMesh) {
-                        if (!obj.userData.originalMaterial) {
-                            obj.userData.originalMaterial = obj.material;
-                        }
-                        obj.material = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true });
-                    }
-                    if (obj.isLight || obj.isGridHelper) {
-                        obj.visible = false; // Hide lights and grid
-                    }
-                });
-                break;
-        }
-        render();
-    }
-    
-    // Helper function to apply shading to a new object
-    function applyShading(object, mode) {
-        if (mode === 'RENDERED') return;
-        
-        object.traverse(child => {
-            if (child.isMesh) {
-                child.userData.originalMaterial = child.material;
-                if (mode === 'SOLID') {
-                    const newMat = new THREE.MeshBasicMaterial();
-                    if (child.material.color) newMat.color.copy(child.material.color);
-                    if (child.material.map) newMat.map = child.material.map;
-                    child.material = newMat;
-                } else if (mode === 'WIREFRAME') {
-                    child.material = new THREE.MeshBasicMaterial({ color: 0xffffff, wireframe: true });
-                }
-            }
-        });
-        
-        // Force a re-render
-        render();
-    }
-    
-    // --- Edit Mode ---
-    function setMode(mode) {
-        if (mode === currentMode) return;
-        
-        // If we are in edit mode, find the *actual* mesh being edited
-        // (in case it's a child of a Group)
-        let mesh = selectedObject;
-        if (selectedObject && selectedObject.isGroup) {
-            mesh = findFirstMesh(selectedObject);
-        }
-        
-        currentMode = mode;
-        modeSwitcher.value = mode;
-        
-        if (mode === 'EDIT' && mesh && mesh.isMesh) {
-            // --- ENTERING EDIT MODE ---
-            selectedObject = mesh; // Select the mesh directly
-            transformControls.attach(mesh); // Re-attach gizmo to the mesh
-            createVertexPoints();
-            selectVertex(null); // Deselect any vertex
-            setTool('translate'); // Default to move tool
-            orbitControls.enabled = true; // Make sure orbit is on
-            
-        } else {
-            // --- LEAVING EDIT MODE ---
-            currentMode = 'OBJECT'; // Force object mode
-            modeSwitcher.value = 'OBJECT';
-            
-            selectVertex(null); // Deselect any vertex
-            if (vertexPointsObject) {
-                if (mesh) { // Check if mesh still exists
-                   mesh.remove(vertexPointsObject);
-                } else {
-                   scene.remove(vertexPointsObject); // Fallback
-                }
-                vertexPointsObject.geometry.dispose();
-                vertexPointsObject.material.dispose();
-                vertexPointsObject = null;
-            }
-            
-            // Re-select the group if it was a group
-            if (mesh && mesh.parent && mesh.parent.isGroup && objects.includes(mesh.parent)) {
-                selectObject(mesh.parent);
-            }
-            
-            setTool('translate'); // Reset tool
-            transformControls.enabled = true;
-        }
-        updateInspector();
-        render();
-    }
-    
-    function createVertexPoints() {
-        if (vertexPointsObject) return; // Already exists
-        
-        const mesh = selectedObject;
-        if (!mesh || !mesh.isMesh) return;
-        
-        // Use a non-indexed geometry
-        const vertexGeom = new THREE.BufferGeometry();
-        const positions = mesh.geometry.attributes.position;
-        vertexGeom.setAttribute('position', positions);
-        
-        // Add vertex colors
-        const vertexCount = positions.count;
-        const colors = new Float32Array(vertexCount * 3);
-        for(let i = 0; i < vertexCount; i++) {
-            colors[i*3] = 1;
-            colors[i*3 + 1] = 1;
-            colors[i*3 + 2] = 1;
-        }
-        vertexGeom.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-        
-        const material = new THREE.PointsMaterial({
-            size: 0.15, // Increased size
-            vertexColors: true,
-            sizeAttenuation: true, // Points get smaller farther away
-        });
-        
-        vertexPointsObject = new THREE.Points(vertexGeom, material);
-        
-        // --- VERTEX HELPER FIX ---
-        // Parent vertex helper to the selected object
-        // This ensures its transforms (position, rotation, scale) are correct.
-        mesh.add(vertexPointsObject);
-    }
-    
-    function updateVertexPoints() {
-        if (!vertexPointsObject) return;
-        
-        const colors = vertexPointsObject.geometry.attributes.color;
-        const vertexCount = colors.count;
-        
-        for(let i = 0; i < vertexCount; i++) {
-            if (i === selectedVertexIndex) {
-                colors.setXYZ(i, 1, 0.5, 0); // Orange for selected
-            } else {
-                colors.setXYZ(i, 1, 1, 1); // White
-            }
-        }
-        colors.needsUpdate = true;
-        vertexPointsObject.geometry.attributes.position.needsUpdate = true;
-    }
-    
-    function selectVertex(index) {
-        if (selectedVertexIndex === index) return;
-        
-        selectedVertexIndex = index;
-        
-        if (index !== null) {
-            // A vertex is selected
-            const pos = selectedObject.geometry.attributes.position;
-            const vertex = new THREE.Vector3();
-            vertex.fromBufferAttribute(pos, index);
-            
-            // Transform vertex position to world space for the gizmo
-            vertex.applyMatrix4(selectedObject.matrixWorld);
-            
-            // Detach from main object, attach to vertex "proxy"
-            transformControls.detach(); // Detach from mesh
-            transformControls.position.copy(vertex);
-            transformControls.enabled = true;
-            transformControls.setMode('translate');
-            setTool('translate');
-            
-        } else {
-            // No vertex selected
-            transformControls.position.set(0,0,0); // Hide it
-            transformControls.enabled = false;
-        }
-        
-        updateVertexPoints();
-        updateInspector();
-        render();
-    }
-    
-    function findFirstMesh(object) {
-        let firstMesh = null;
-        object.traverse(child => {
-            if (child.isMesh && !firstMesh) {
-                firstMesh = child;
-            }
-        });
-        return firstMesh;
-    }
-
-    // --- Outliner (Left Panel) ---
-    function initOutliner() {
-        outlinerList = document.getElementById('outliner-list');
-        const outlinerHeader = document.getElementById('outliner-header');
-
-        // Drag-and-Drop for UN-parenting (dropping on header)
-        outlinerHeader.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            outlinerHeader.classList.add('outliner-drag-over');
-        });
-        outlinerHeader.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            outlinerHeader.classList.remove('outliner-drag-over');
-        });
-        outlinerHeader.addEventListener('drop', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            outlinerHeader.classList.remove('outliner-drag-over');
-            if (dragObject && dragObject.parent !== scene) {
-                parentObject(dragObject, scene); // Parent to scene (un-parent)
-            }
-            dragObject = null;
-        });
-    }
-    
-    // Recursive function to build the outliner
-    function updateOutliner() {
-        if (!outlinerList) return;
-        outlinerList.innerHTML = ''; // Clear list
-        
-        // Get all top-level objects (parented to the scene)
-        const topLevelObjects = objects.filter(o => o.parent === scene);
-
-        // Recursively create items
-        topLevelObjects.forEach(object => {
-            createOutlinerItem(object, 0);
-        });
-    }
-    
-    function createOutlinerItem(object, indentLevel) {
-        // Don't show helpers, etc.
-        if (object.isTransformControls || object.isGridHelper || object.isAxesHelper) {
-            return;
-        }
-        
-        // Don't show children of groups if the parent is a Group asset
-        // (We only want to show the top-level group)
-        if (indentLevel > 0 && object.parent.isGroup && objects.includes(object.parent)) {
-            return;
-        }
-
-        const item = document.createElement('div');
-        item.className = 'outliner-item p-1 px-2 rounded text-sm';
-        item.style.paddingLeft = `${(indentLevel * 20) + 8}px`; // 8px base + 20px per level
-        item.draggable = true;
-        
-        if (object === selectedObject || (selectedObject && selectedObject.parent === object)) {
-            item.classList.add('selected');
-        }
-        
-        // Icon
-        let iconClass = 'fa-question'; // Default
-        if (object.isMesh) iconClass = 'fa-cube';
-        if (object.isGroup) iconClass = 'fa-boxes-stacked'; // Icon for low-poly models
-        if (object.isPerspectiveCamera) iconClass = 'fa-camera';
-        if (object.isDirectionalLight) iconClass = 'fa-sun';
-        if (object.isPointLight) iconClass = 'fa-lightbulb';
-        if (object.isSpotLight) iconClass = 'fa-video';
-        if (object.isAmbientLight) iconClass = 'fa-circle-half-stroke';
-        if (object.userData.isImported) iconClass = 'fa-gem'; // Icon for imports
-
-        // Name
-        const nameSpan = document.createElement('span');
-        nameSpan.textContent = object.name || 'Object';
-        nameSpan.className = 'name-span';
-        
-        // Visibility Toggle
-        const visibilityToggle = document.createElement('i');
-        visibilityToggle.className = `fas ${object.visible ? 'fa-eye' : 'fa-eye-slash'} visibility-toggle`;
-        if (!object.visible) {
-            visibilityToggle.classList.add('hidden-obj');
-        }
-        
-        visibilityToggle.addEventListener('click', (e) => {
-            e.stopPropagation(); // Don't select object
-            const newValue = !object.visible;
-            recordHistory({
-                type: 'visibility',
-                objectUUID: object.uuid,
-                oldValue: object.visible,
-                newValue: newValue
-            });
-            object.visible = newValue;
-            if (object.helper) object.helper.visible = newValue; // Toggle helper too
+        // Add default scene objects
+        function addInitialObjects() {
+            // Add Ground
+            const groundGeom = new THREE.PlaneGeometry(100, 100);
+            const ground = new THREE.Mesh(groundGeom, materials.ground);
+            ground.rotation.x = Math.PI / 2;
+            ground.position.y = -0.01;
+            ground.receiveShadow = true;
+            ground.name = "Ground Plane";
+            scene.add(ground);
+            objects.push(ground);
+            // Add Default Light (Directional)
+            const dirLight = createDirectionalLight();
+            dirLight.name = "Sun Light";
+            dirLight.position.set(10, 20, 10);
+            scene.add(dirLight);
+            objects.push(dirLight);
+            // Add Ambient Light
+            const ambientLight = createAmbientLight();
+            ambientLight.name = "Ambient Light";
+            scene.add(ambientLight);
+            objects.push(ambientLight);
+            // Add a sample cube
+            const sampleCube = createCube();
+            sampleCube.name = "My First Cube";
+            sampleCube.position.set(0, 0.5, 0);
+            scene.add(sampleCube);
+            objects.push(sampleCube);
+            // Select the cube by default
+            selectObject(sampleCube);
             updateOutliner();
-            render();
-        });
+        }
 
-        item.appendChild(visibilityToggle);
-        
-        const icon = document.createElement('i');
-        icon.className = `fas ${iconClass}`;
-        item.appendChild(icon);
-        item.appendChild(nameSpan);
-        outlinerList.appendChild(item);
+        // --- Object Creation Factory ---
 
-        // --- Event Listeners for the item ---
-        
-        // Click to select
-        item.addEventListener('click', (e) => {
-            e.stopPropagation();
-            selectObject(object);
-        });
-        
-        // Double-click to rename
-        item.addEventListener('dblclick', (e) => {
-            e.stopPropagation();
-            nameSpan.contentEditable = true;
-            nameSpan.focus();
-            const originalName = nameSpan.textContent;
-            
-            const finishRename = () => {
-                nameSpan.contentEditable = false;
-                const newName = nameSpan.textContent;
-                if (newName.trim() === '') {
-                    nameSpan.textContent = originalName; // Revert
-                } else if (newName !== originalName) {
-                    recordHistory({
-                        type: 'rename',
-                        objectUUID: object.uuid,
-                        oldName: originalName,
-                        newName: newName
-                    });
-                    object.name = newName;
-                    updateOutliner();
-                    updateInspector();
-                    if(object.isCamera) updateCameraMenu();
-                }
+        function createCube() {
+            const geometry = new THREE.BoxGeometry(1, 1, 1);
+            const mesh = new THREE.Mesh(geometry, materials.default.clone());
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.name = "Cube";
+            return mesh;
+        }
+
+        function createSphere() {
+            const geometry = new THREE.SphereGeometry(0.5, 32, 16);
+            const mesh = new THREE.Mesh(geometry, materials.default.clone());
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            mesh.name = "Sphere";
+            return mesh;
+        }
+
+        function createPlane() {
+            const geometry = new THREE.PlaneGeometry(5, 5);
+            const mesh = new THREE.Mesh(geometry, materials.ground.clone());
+            mesh.rotation.x = -Math.PI / 2;
+            mesh.castShadow = false;
+            mesh.receiveShadow = true;
+            mesh.name = "Plane";
+            return mesh;
+        }
+
+        function createDirectionalLight() {
+            const light = new THREE.DirectionalLight(0xffffff, 1.5);
+            light.castShadow = true;
+            light.shadow.mapSize.width = 1024;
+            light.shadow.mapSize.height = 1024;
+            light.shadow.camera.near = 0.5;
+            light.shadow.camera.far = 50;
+            light.shadow.camera.left = -20;
+            light.shadow.camera.right = 20;
+            light.shadow.camera.top = 20;
+            light.shadow.camera.bottom = -20;
+            return light;
+        }
+
+        function createAmbientLight() {
+            const light = new THREE.AmbientLight(0xffffff, 0.5);
+            return light;
+        }
+
+        function createLowPolySpaceship() {
+            const group = new THREE.Group();
+            group.name = "Spaceship";
+            const bodyGeom = new THREE.ConeGeometry(1, 4, 4);
+            const body = new THREE.Mesh(bodyGeom, materials.spaceshipBody);
+            body.name = "Body";
+            body.rotation.x = Math.PI / 2;
+            body.castShadow = true;
+            group.add(body);
+            // Fins
+            const finShape = new THREE.Shape().moveTo(0, 0).lineTo(0, 0.25).lineTo(-2, 0).lineTo(0.5, 0).lineTo(0, 0);
+            const finGeomExtrude = new THREE.ExtrudeGeometry(finShape, { depth: 0.1, bevelEnabled: false });
+            const fin1 = new THREE.Mesh(finGeomExtrude, materials.spaceshipFin);
+            fin1.name = "Fin1";
+            fin1.rotation.x = Math.PI / 2;
+            fin1.position.z = 1.5;
+            fin1.position.y = 0;
+            fin1.scale.set(1, 1, 1);
+            fin1.castShadow = true;
+            group.add(fin1);
+            const fin2 = fin1.clone(); fin2.name = "Fin2";
+            fin2.rotation.y = Math.PI / 2;
+            group.add(fin2);
+            const fin3 = fin1.clone(); fin3.name = "Fin3";
+            fin3.rotation.y = Math.PI;
+            group.add(fin3);
+            const fin4 = fin1.clone(); fin4.name = "Fin4";
+            fin4.rotation.y = -Math.PI / 2;
+            group.add(fin4);
+            return group;
+        }
+
+        function createLowPolyMountain() {
+            const group = new THREE.Group();
+            group.name = "Mountain";
+            const rockMat = materials.mountainRock.clone();
+            const snowMat = materials.mountainSnow.clone();
+            // Base
+            const baseGeom = new THREE.CylinderGeometry(3, 4, 1, 8);
+            const base = new THREE.Mesh(baseGeom, rockMat);
+            base.name = "Base";
+            base.position.y = 0.5;
+            base.castShadow = true;
+            group.add(base);
+            // Peak
+            const peakGeom = new THREE.ConeGeometry(3, 4, 8);
+            const peak = new THREE.Mesh(peakGeom, rockMat);
+            peak.name = "Peak";
+            peak.position.y = 3;
+            peak.castShadow = true;
+            group.add(peak);
+            // Snow Cap
+            const snowGeom = new THREE.ConeGeometry(1.5, 2, 8);
+            const snow = new THREE.Mesh(snowGeom, snowMat);
+            snow.name = "SnowCap";
+            snow.position.y = 4.5;
+            snow.castShadow = true;
+            group.add(snow);
+            return group;
+        }
+
+        // --- Selection and UI Logic ---
+
+        function updateOutliner() {
+            const outliner = document.getElementById('outliner-content');
+            outliner.innerHTML = '';
+            const getIcon = (obj) => {
+                if (obj.isMesh) return '<i class="fas fa-cube outliner-icon"></i>';
+                if (obj.isLight) return '<i class="fas fa-lightbulb outliner-icon"></i>';
+                if (obj.isGroup) return '<i class="fas fa-layer-group outliner-icon"></i>';
+                if (obj.isCamera) return '<i class="fas fa-video outliner-icon"></i>';
+                return '<i class="fas fa-map-pin outliner-icon"></i>';
             };
-            
-            nameSpan.addEventListener('blur', finishRename);
-            nameSpan.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    finishRename();
-                } else if (e.key === 'Escape') {
-                    nameSpan.textContent = originalName;
-                    finishRename();
-                }
-            });
-            
-            // Select all text
-            document.execCommand('selectAll', false, null);
-        });
-
-        // --- Drag-and-Drop for Parenting ---
-        
-        // 1. Start Drag
-        item.addEventListener('dragstart', (e) => {
-            e.stopPropagation();
-            dragObject = object;
-            e.dataTransfer.effectAllowed = 'move';
-        });
-
-        // 2. Drag Over (potential parent)
-        item.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            // FIX: Check if target (object) is a descendant of the dragged object (dragObject)
-            if (dragObject && dragObject !== object && !isDescendantOf(object, dragObject)) {
-                item.classList.add('outliner-drag-over');
-            }
-        });
-
-        // 3. Drag Leave
-        item.addEventListener('dragleave', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            item.classList.remove('outliner-drag-over');
-        });
-
-        // 4. Drop (complete parenting)
-        item.addEventListener('drop', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            item.classList.remove('outliner-drag-over');
-            // FIX: Check if target (object) is a descendant of the dragged object (dragObject)
-            if (dragObject && dragObject !== object && !isDescendantOf(object, dragObject)) {
-                parentObject(dragObject, object);
-            }
-            dragObject = null;
-        });
-        
-        // 5. Drag End (cleanup)
-        item.addEventListener('dragend', (e) => {
-            e.stopPropagation();
-            dragObject = null;
-            document.querySelectorAll('.outliner-drag-over').forEach(el => {
-                el.classList.remove('outliner-drag-over');
-            });
-        });
-
-        // Recursively add children, but only if it's NOT a Low Poly Asset
-        // (We don't want to show the asset's children in the outliner)
-        if (!object.isGroup) {
-            object.children.forEach(child => {
-                if (objects.includes(child)) { // Only show children we manage
-                    createOutlinerItem(child, indentLevel + 1);
-                }
-            });
-        }
-    }
-    
-    // --- FIX: Helper function to check parenting hierarchy ---
-    function isDescendantOf(child, parent) {
-        if (!child || !parent) return false;
-        let current = child.parent;
-        while (current) {
-            if (current === parent) {
-                return true;
-            }
-            current = current.parent;
-        }
-        return false;
-    }
-    
-    function parentObject(child, parent, recordHistoryFlag = true) {
-        if (!child || !parent) return;
-        
-        const oldParentUUID = child.parent ? (child.parent === scene ? 'scene' : child.parent.uuid) : 'scene';
-        
-        if (recordHistoryFlag) {
-            recordHistory({
-                type: 'parent',
-                objectUUID: child.uuid,
-                oldParentUUID: oldParentUUID,
-                newParentUUID: parent === scene ? 'scene' : parent.uuid,
-            });
-        }
-        
-        if (parent === scene) {
-            THREE.SceneUtils.detach(child, child.parent, scene);
-        } else {
-            THREE.SceneUtils.attach(child, child.parent, parent);
-        }
-        
-        updateOutliner();
-        render();
-    }
-
-
-    // --- Inspector (Right Panel) ---
-    function initInspector() {
-        inspectorContent = document.getElementById('inspector-content');
-        inspectorPlaceholder = document.getElementById('inspector-placeholder');
-    }
-
-    function updateInspector() {
-        if (!inspectorContent) return;
-        
-        // Clear content
-        inspectorContent.innerHTML = '';
-
-        if (!selectedObject) {
-            inspectorContent.appendChild(inspectorPlaceholder);
-            return;
-        }
-        
-        // --- Edit Mode Inspector ---
-        if (currentMode === 'EDIT' && selectedObject.isMesh) {
-             inspectorContent.appendChild(createSectionHeader('Vertex Position'));
-             
-             if (selectedVertexIndex !== null) {
-                 const pos = selectedObject.geometry.attributes.position;
-                 const vertex = new THREE.Vector3().fromBufferAttribute(pos, selectedVertexIndex);
-                 
-                 inspectorContent.appendChild(createVector3Input('Local', vertex, (axis, value) => {
-                     // Update geometry
-                     pos.setXYZ(selectedVertexIndex, 
-                         axis === 'x' ? value : vertex.x,
-                         axis === 'y' ? value : vertex.y,
-                         axis === 'z' ? value : vertex.z
-                     );
-                     pos.needsUpdate = true;
-                     
-                     // Update vertex helpers
-                     updateVertexPoints();
-                     
-                     // Update gizmo position
-                     selectVertex(selectedVertexIndex);
-                     
-                     // Record history (on change, not drag)
-                      recordHistory({
-                        type: 'vertexMove',
-                        objectUUID: selectedObject.uuid,
-                        vertexIndex: selectedVertexIndex,
-                        position: selectedObject.geometry.attributes.position.array.slice(selectedVertexIndex*3, selectedVertexIndex*3+3)
-                    });
-                     
-                     render();
-                 }));
-             } else {
-                 inspectorContent.innerHTML = '<div class="text-gray-500 text-sm p-4 text-center">Select a vertex to edit its position.</div>';
-             }
-             return; // Stop here for edit mode
-        }
-        
-        // --- Object Mode Inspector ---
-
-        // Name
-        const nameRow = document.createElement('div');
-        nameRow.className = 'inspector-row mb-4';
-        nameRow.style.gridTemplateColumns = '1fr';
-        const nameInput = document.createElement('input');
-        nameInput.type = 'text';
-        nameInput.value = selectedObject.name || 'Object';
-        nameInput.className = 'bg-gray-700 border border-gray-600 rounded p-1 text-lg font-bold';
-        nameInput.addEventListener('change', (e) => {
-             const originalName = selectedObject.name;
-             const newName = e.target.value;
-             recordHistory({
-                type: 'rename',
-                objectUUID: selectedObject.uuid,
-                oldName: originalName,
-                newName: newName
-            });
-            selectedObject.name = newName;
-            updateOutliner();
-            if(selectedObject.isCamera) updateCameraMenu();
-        });
-        nameRow.appendChild(nameInput);
-        inspectorContent.appendChild(nameRow);
-
-        // Transform Section
-        inspectorContent.appendChild(createSectionHeader('Transform'));
-        
-        // Position
-        inspectorContent.appendChild(createVector3Input('Position', selectedObject.position, (axis, value) => {
-            selectedObject.position[axis] = value;
-            render();
-            recordTransformHistory();
-        }));
-        
-        // Rotation (in degrees)
-        const euler = new THREE.Euler().setFromQuaternion(selectedObject.quaternion, 'YXZ');
-        const degrees = {
-            x: THREE.MathUtils.radToDeg(euler.x),
-            y: THREE.MathUtils.radToDeg(euler.y),
-            z: THREE.MathUtils.radToDeg(euler.z)
-        };
-        inspectorContent.appendChild(createVector3Input('Rotation', degrees, (axis, value) => {
-            degrees[axis] = value;
-            selectedObject.rotation.setFromVector3(
-                new THREE.Vector3(
-                    THREE.MathUtils.degToRad(degrees.x),
-                    THREE.MathUtils.degToRad(degrees.y),
-                    THREE.MathUtils.degToRad(degrees.z)
-                ), 'YXZ'
+            const filteredChildren = scene.children.filter(obj =>
+                obj.name && !obj.name.startsWith('Gizmo') && !(obj instanceof THREE.Camera)
             );
-            render();
-            recordTransformHistory();
-        }, 1)); // Step by 1 degree
-        
-        // Scale
-        inspectorContent.appendChild(createVector3Input('Scale', selectedObject.scale, (axis, value) => {
-            selectedObject.scale[axis] = value;
-            render();
-            recordTransformHistory();
-        }));
-
-        
-        // --- Material Section (for meshes) ---
-        // Also check for imported models (Group) and find the first mesh to edit
-        let material, materialObject = selectedObject;
-        if (selectedObject.isGroup) {
-            // Find the "main" part of a low-poly model to edit
-            materialObject = selectedObject.children.find(c => c.isMesh);
-            if (materialObject) {
-                material = materialObject.material;
+            // Add Camera to the top of the list manually
+            if (camera) {
+                 const camDiv = document.createElement('div');
+                 camDiv.className = `outliner-item text-gray-400 ${selectedObject === camera ? 'selected' : ''}`;
+                 camDiv.innerHTML = `${getIcon(camera)} ${camera.name} (Camera)`;
+                 camDiv.dataset.uuid = camera.uuid;
+                 camDiv.onclick = (e) => selectObject(camera);
+                 outliner.appendChild(camDiv);
             }
-        } else if (selectedObject.isMesh) {
-            material = selectedObject.material;
-        }
-        
-        if (material) {
-            // Handle multiple materials
-            const materials = Array.isArray(material) ? material : [material];
-            
-            materials.forEach((mat, index) => {
-                inspectorContent.appendChild(createSectionHeader(materials.length > 1 ? `Material ${index}` : 'Material'));
-                
-                // Color
-                inspectorContent.appendChild(createColorInput('Color', mat.color, (value) => {
-                    mat.color.set(value);
-                    render();
-                }));
-                
-                // Emissive
-                inspectorContent.appendChild(createColorAndIntensityInput(
-                    'Emissive', 
-                    mat.emissive, 
-                    mat.emissiveIntensity,
-                    (color) => { // Color callback
-                        mat.emissive.set(color);
-                        render();
-                    },
-                    (intensity) => { // Intensity callback
-                        mat.emissiveIntensity = intensity;
-                        render();
-                    }
-                ));
-                
-                // Roughness
-                inspectorContent.appendChild(createSliderInput('Roughness', mat.roughness, 0, 1, 0.01, (value) => {
-                    mat.roughness = value;
-                    render();
-                }));
-                
-                // Metalness
-                inspectorContent.appendChild(createSliderInput('Metalness', mat.metalness, 0, 1, 0.01, (value) => {
-                    mat.metalness = value;
-                    render();
-                }));
-                
-                // Opacity
-                inspectorContent.appendChild(createSliderInput('Opacity', mat.opacity, 0, 1, 0.01, (value) => {
-                    mat.opacity = value;
-                    mat.transparent = value < 1.0;
-                    mat.needsUpdate = true;
-                    render();
-                }));
-                
-                // Wireframe
-                inspectorContent.appendChild(createCheckboxInput('Wireframe', mat.wireframe, (value) => {
-                    mat.wireframe = value;
-                    render();
-                }));
-            });
-        }
-        
-        // --- Light Section (for lights) ---
-        if (selectedObject.isLight) {
-            inspectorContent.appendChild(createSectionHeader('Light'));
-            
-            // Color
-            inspectorContent.appendChild(createColorInput('Color', selectedObject.color, (value) => {
-                selectedObject.color.set(value);
-                if (selectedObject.helper) selectedObject.helper.color.set(value);
-                render();
-            }));
-            
-            // Intensity
-            inspectorContent.appendChild(createSliderInput('Intensity', selectedObject.intensity, 0, 10, 0.1, (value) => {
-                selectedObject.intensity = value;
-                render();
-            }));
-            
-            // Distance & Decay (for Point/Spot)
-            if (selectedObject.isPointLight || selectedObject.isSpotLight) {
-                inspectorContent.appendChild(createSliderInput('Distance', selectedObject.distance, 0, 100, 1, (value) => {
-                    selectedObject.distance = value;
-                    render();
-                }));
-                inspectorContent.appendChild(createSliderInput('Decay', selectedObject.decay, 0, 2, 0.1, (value) => {
-                    selectedObject.decay = value;
-                    render();
-                }));
-            }
-            
-            // Angle, Penumbra (for Spot)
-            if (selectedObject.isSpotLight) {
-                 inspectorContent.appendChild(createSliderInput('Angle', THREE.MathUtils.radToDeg(selectedObject.angle), 0, 90, 1, (value) => {
-                    selectedObject.angle = THREE.MathUtils.degToRad(value);
-                    selectedObject.helper.update();
-                    render();
-                }));
-                 inspectorContent.appendChild(createSliderInput('Penumbra', selectedObject.penumbra, 0, 1, 0.01, (value) => {
-                    selectedObject.penumbra = value;
-                    render();
-                }));
-            }
-        }
-        
-        // --- Camera Section ---
-        if (selectedObject.isPerspectiveCamera) {
-            inspectorContent.appendChild(createSectionHeader('Camera'));
-            
-            // FOV
-            inspectorContent.appendChild(createSliderInput('FOV', selectedObject.fov, 10, 120, 1, (value) => {
-                selectedObject.fov = value;
-                selectedObject.updateProjectionMatrix();
-                if(selectedObject.helper) selectedObject.helper.update();
-                render();
-            }));
-        }
-    }
-
-    // --- Inspector Helper Functions ---
-    function createSectionHeader(title) {
-        const div = document.createElement('div');
-        div.className = 'inspector-section-header p-1 px-2 mt-4 mb-2 rounded';
-        div.textContent = title;
-        return div;
-    }
-
-    function createVector3Input(label, vector, callback, step = 0.01, disabled = false) {
-        const container = document.createElement('div');
-        container.className = 'mb-2';
-        
-        const labelEl = document.createElement('div');
-        labelEl.textContent = label;
-        labelEl.className = 'text-sm text-gray-400 mb-1';
-        container.appendChild(labelEl);
-        
-        const row = document.createElement('div');
-        row.className = 'grid grid-cols-3 gap-2';
-        
-        ['x', 'y', 'z'].forEach(axis => {
-            const axisWrapper = document.createElement('div');
-            axisWrapper.className = 'inspector-row';
-            
-            const axisLabel = document.createElement('label');
-            axisLabel.textContent = axis.toUpperCase();
-            axisLabel.className = 'text-red-500 font-bold';
-            if (axis === 'y') axisLabel.className = 'text-green-500 font-bold';
-            if (axis === 'z') axisLabel.className = 'text-blue-500 font-bold';
-            
-            const input = document.createElement('input');
-            input.type = 'number';
-            input.step = step;
-            input.value = vector[axis].toFixed(2);
-            input.disabled = disabled;
-            if (disabled) input.classList.add('opacity-50', 'cursor-not-allowed');
-            
-            input.addEventListener('change', (e) => {
-                if(disabled) return;
-                const val = parseFloat(e.target.value);
-                if (!isNaN(val)) {
-                    callback(axis, val);
-                }
-            });
-            
-            axisWrapper.appendChild(axisLabel);
-            axisWrapper.appendChild(input);
-            row.appendChild(axisWrapper);
-        });
-        
-        container.appendChild(row);
-        return container;
-    }
-
-    function createColorInput(label, color, callback) {
-        const row = document.createElement('div');
-        row.className = 'inspector-row';
-        
-        const labelEl = document.createElement('label');
-        labelEl.textContent = label;
-        labelEl.className = 'text-sm text-gray-400';
-        
-        const input = document.createElement('input');
-        input.type = 'color';
-        input.value = `#${color.getHexString()}`;
-        input.addEventListener('input', (e) => {
-            callback(e.target.value);
-        });
-        
-        row.appendChild(labelEl);
-        row.appendChild(input);
-        return row;
-    }
-
-    function createSliderInput(label, value, min, max, step, callback) {
-        const row = document.createElement('div');
-        row.className = 'inspector-row';
-        
-        const labelEl = document.createElement('label');
-        labelEl.textContent = label;
-        labelEl.className = 'text-sm text-gray-400';
-        
-        const input = document.createElement('input');
-        input.type = 'range';
-        input.min = min;
-        input.max = max;
-        input.step = step;
-        input.value = value;
-        input.addEventListener('input', (e) => {
-            callback(parseFloat(e.target.value));
-        });
-        
-        row.appendChild(labelEl);
-        row.appendChild(input);
-        return row;
-    }
-    
-    function createCheckboxInput(label, value, callback) {
-        const row = document.createElement('div');
-        row.className = 'inspector-row';
-        
-        const labelEl = document.createElement('label');
-        labelEl.textContent = label;
-        labelEl.className = 'text-sm text-gray-400';
-        
-        const input = document.createElement('input');
-        input.type = 'checkbox';
-        input.checked = value;
-        input.addEventListener('change', (e) => {
-            callback(e.target.checked);
-        });
-        
-        row.appendChild(labelEl);
-        row.appendChild(input);
-        return row;
-    }
-    
-    function createColorAndIntensityInput(label, color, intensity, colorCallback, intensityCallback) {
-        const container = document.createElement('div');
-        
-        const labelEl = document.createElement('label');
-        labelEl.textContent = label;
-        labelEl.className = 'text-sm text-gray-400 mb-1';
-        container.appendChild(labelEl);
-        
-        const row = document.createElement('div');
-        row.className = 'inspector-row';
-        row.style.gridTemplateColumns = '80px 1fr';
-        
-        // Color
-        const colorInput = document.createElement('input');
-        colorInput.type = 'color';
-        colorInput.value = `#${color.getHexString()}`;
-        colorInput.addEventListener('input', (e) => {
-            colorCallback(e.target.value);
-        });
-        
-        // Intensity
-        const intensityInput = document.createElement('input');
-        intensityInput.type = 'range';
-        intensityInput.min = 0;
-        intensityInput.max = 10; // Emissive intensity cap
-        intensityInput.step = 0.1;
-        intensityInput.value = intensity;
-        intensityInput.addEventListener('input', (e) => {
-            intensityCallback(parseFloat(e.target.value));
-        });
-        
-        row.appendChild(colorInput);
-        row.appendChild(intensityInput);
-        container.appendChild(row);
-        return container;
-    }
-    
-    // Debounce function to avoid flooding history
-    let transformTimer;
-    function recordTransformHistory() {
-        clearTimeout(transformTimer);
-        transformTimer = setTimeout(() => {
-            if (selectedObject && selectedObject !== camera) { // Don't record history for viewport cam
-                recordHistory({
-                    type: 'transform',
-                    objectUUID: selectedObject.uuid,
-                    transform: {
-                        position: selectedObject.position.clone(),
-                        rotation: selectedObject.rotation.clone(),
-                        scale: selectedObject.scale.clone(),
-                    }
-                });
-            }
-        }, 500); // 500ms delay
-    }
-
-    // --- View Menu ---
-    function updateCameraMenu() {
-        const menu = document.getElementById('camera-list-menu');
-        if (!menu) return;
-        menu.innerHTML = ''; // Clear
-        
-        objects.forEach(obj => {
-            if (obj.isPerspectiveCamera) {
-                const item = document.createElement('div');
-                item.className = 'menu-item';
-                item.textContent = obj.name;
-                
-                if(obj === activeRenderCamera) {
-                    item.classList.add('active-camera');
-                }
-                
-                item.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    activeRenderCamera = obj;
-                    setCameraViewLock(false); // Always unlock when changing cameras
-                    updateCameraMenu();
-                    closeAllMenus();
-                });
-                menu.appendChild(item);
-            }
-        });
-    }
-
-    // --- Menu Bar Logic ---
-    function initMenus() {
-        const menuTriggers = document.querySelectorAll('.menu-trigger');
-        
-        menuTriggers.forEach(trigger => {
-            trigger.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const dropdown = trigger.nextElementSibling;
-                const isHidden = dropdown.classList.contains('hidden');
-                closeAllMenus();
-                if (isHidden) {
-                    dropdown.classList.remove('hidden');
-                }
-            });
-        });
-        
-        // Click anywhere to close menus
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.menu-container')) closeAllMenus();
-        });
-        
-        // --- File Menu ---
-        document.getElementById('new-scene').addEventListener('click', (e) => {
-            e.preventDefault(); closeAllMenus();
-            if(confirm("Are you sure you want to start a new scene? Any unsaved changes will be lost.")) {
-                clearScene();
-                addDefaultLights();
-                addPrimitive('cube', {}, false);
-            }
-        });
-        document.getElementById('save-scene').addEventListener('click', (e) => {
-            e.preventDefault(); closeAllMenus();
-            saveSceneToFile();
-        });
-        const fileOpener = document.getElementById('file-opener');
-        document.getElementById('open-scene').addEventListener('click', (e) => {
-            e.preventDefault(); closeAllMenus();
-            fileOpener.click();
-        });
-        fileOpener.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    const data = JSON.parse(event.target.result);
-                    loadSceneFromData(data);
-                } catch (err) {
-                    console.error("Failed to load scene:", err);
-                    alert("Error: Could not read scene file. It may be corrupt.");
-                }
-            };
-            reader.readAsText(file);
-            
-            // Reset input so you can load the same file again
-            e.target.value = null;
-        });
-        
-        // --- FIX: This was missing ---
-        modelImporter = document.getElementById('model-importer');
-        document.getElementById('import-model').addEventListener('click', (e) => {
-            e.preventDefault(); closeAllMenus();
-            modelImporter.click();
-        });
-        modelImporter.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            loadImportedModel(file);
-            // Reset input
-            e.target.value = null;
-        });
-        // --- End Fix ---
-        
-        document.getElementById('export-glb').addEventListener('click', (e) => {
-            e.preventDefault(); closeAllMenus();
-            exportScene('glb');
-        });
-        document.getElementById('export-obj').addEventListener('click', (e) => {
-            e.preventDefault(); closeAllMenus();
-            exportScene('obj');
-        });
-
-        // --- Edit Menu ---
-        document.getElementById('undo').addEventListener('click', (e) => { e.preventDefault(); closeAllMenus(); undo(); });
-        document.getElementById('redo').addEventListener('click', (e) => { e.preventDefault(); closeAllMenus(); redo(); });
-        document.getElementById('cut').addEventListener('click', (e) => { e.preventDefault(); closeAllMenus(); cutObject(); });
-        document.getElementById('copy').addEventListener('click', (e) => { e.preventDefault(); closeAllMenus(); copyObject(); });
-        document.getElementById('paste').addEventListener('click', (e) => { e.preventDefault(); closeAllMenus(); pasteObject(); });
-
-        // --- Add Menu (Primitives) ---
-        document.querySelectorAll('.add-primitive').forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.preventDefault(); closeAllMenus();
-                addPrimitive(item.dataset.type);
-            });
-        });
-        
-        // --- Add Menu (Assets) ---
-        document.getElementById('add-asset-tree').addEventListener('click', (e) => { e.preventDefault(); closeAllMenus(); addAsset('tree'); });
-        document.getElementById('add-asset-house').addEventListener('click', (e) => { e.preventDefault(); closeAllMenus(); addAsset('house'); });
-        document.getElementById('add-asset-car').addEventListener('click', (e) => { e.preventDefault(); closeAllMenus(); addAsset('car'); });
-        document.getElementById('add-asset-sword').addEventListener('click', (e) => { e.preventDefault(); closeAllMenus(); addAsset('sword'); });
-        document.getElementById('add-asset-person').addEventListener('click', (e) => { e.preventDefault(); closeAllMenus(); addAsset('person'); });
-        document.getElementById('add-asset-mug').addEventListener('click', (e) => { e.preventDefault(); closeAllMenus(); addAsset('mug'); });
-        document.getElementById('add-asset-rocket').addEventListener('click', (e) => { e.preventDefault(); closeAllMenus(); addAsset('rocket'); });
-        document.getElementById('add-asset-mountain').addEventListener('click', (e) => { e.preventDefault(); closeAllMenus(); addAsset('mountain'); });
-        
-        // --- Add Menu (Lights) ---
-        document.querySelectorAll('.add-light').forEach(item => {
-            item.addEventListener('click', (e) => {
-                e.preventDefault(); closeAllMenus();
-                addLight(item.dataset.type);
-            });
-        });
-        document.getElementById('add-ambient-light').addEventListener('click', (e) => {
-            e.preventDefault(); closeAllMenus();
-            const ambient = objects.find(o => o.isAmbientLight);
-            if(ambient) selectObject(ambient);
-        });
-        
-        // --- Add Menu (Camera) ---
-        document.getElementById('add-camera').addEventListener('click', (e) => {
-            e.preventDefault(); closeAllMenus();
-            addCamera();
-        });
-
-        // --- Render Menu ---
-        document.getElementById('render-image').addEventListener('click', (e) => {
-            e.preventDefault(); closeAllMenus();
-            showRenderModal();
-        });
-        
-        // --- Window Menu ---
-        document.getElementById('toggle-fullscreen').addEventListener('click', (e) => {
-            e.preventDefault(); closeAllMenus();
-            toggleFullscreen();
-        });
-
-        // --- Help Menu ---
-        document.getElementById('show-about').addEventListener('click', (e) => {
-            e.preventDefault(); closeAllMenus();
-            showAboutModal();
-        });
-        
-        // --- View Menu (init) ---
-        updateCameraMenu();
-        document.getElementById('view-from-active').addEventListener('click', (e) => {
-            e.preventDefault();
-            closeAllMenus();
-            snapViewportToActiveCamera();
-        });
-        lockCameraViewMenuItem = document.getElementById('lock-camera-view');
-        lockCameraViewMenuItem.addEventListener('click', (e) => {
-            e.preventDefault();
-            toggleCameraViewLock();
-            // Don't close menu, so they can see the checkmark
-            // closeAllMenus(); 
-        });
-    }
-
-    function closeAllMenus() {
-        document.querySelectorAll('.menu-dropdown').forEach(dropdown => {
-            dropdown.classList.add('hidden');
-        });
-    }
-    
-    // --- FIX: This function was corrupted ---
-    function addDefaultLights() {
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
-        ambientLight.name = "AmbientLight";
-        scene.add(ambientLight);
-        objects.push(ambientLight); // Add to master list
-
-        // Add a default directional light
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-        directionalLight.position.set(5, 10, 7.5);
-        directionalLight.castShadow = true;
-        directionalLight.name = "DirectionalLight";
-        scene.add(directionalLight);
-        objects.push(directionalLight);
-    }
-    
-    // --- Add Primitives, Lights, Cameras ---
-    function addPrimitive(type, options = {}, recordHistoryFlag = true) {
-        let geometry, mesh;
-        const material = new THREE.MeshStandardMaterial({ 
-            color: options.color || 0xffffff,
-            roughness: options.roughness || 0.5,
-            metalness: options.metalness || 0.0,
-            emissive: options.emissive || 0x000000,
-            emissiveIntensity: options.emissiveIntensity || 1,
-            opacity: options.opacity || 1.0,
-            transparent: (options.opacity || 1.0) < 1.0,
-            wireframe: options.wireframe || false,
-        });
-
-        switch (type) {
-            case 'cube':
-                geometry = new THREE.BoxGeometry(2, 2, 2);
-                mesh = new THREE.Mesh(geometry, material);
-                mesh.name = 'Cube';
-                break;
-            case 'sphere':
-                geometry = new THREE.SphereGeometry(1, 32, 16);
-                mesh = new THREE.Mesh(geometry, material);
-                mesh.name = 'Sphere';
-                break;
-            case 'cone':
-                geometry = new THREE.ConeGeometry(1, 2, 32);
-                mesh = new THREE.Mesh(geometry, material);
-                mesh.name = 'Cone';
-                break;
-            case 'cylinder':
-                geometry = new THREE.CylinderGeometry(1, 1, 2, 32);
-                mesh = new THREE.Mesh(geometry, material);
-                mesh.name = 'Cylinder';
-                break;
-            case 'torus':
-                geometry = new THREE.TorusGeometry(1, 0.4, 16, 100);
-                mesh = new THREE.Mesh(geometry, material);
-                mesh.name = 'Torus';
-                break;
-            case 'torusknot':
-                geometry = new THREE.TorusKnotGeometry(1, 0.4, 100, 16);
-                mesh = new THREE.Mesh(geometry, material);
-                mesh.name = 'TorusKnot';
-                break;
-            case 'icosahedron':
-                geometry = new THREE.IcosahedronGeometry(1);
-                mesh = new THREE.Mesh(geometry, material);
-                mesh.name = 'Icosahedron';
-                break;
-            case 'plane':
-                geometry = new THREE.PlaneGeometry(10, 10);
-                mesh = new THREE.Mesh(geometry, material);
-                mesh.name = 'Plane';
-                mesh.rotation.x = -Math.PI / 2; // Lay flat
-                break;
-            default:
-                return;
-        }
-
-        mesh.castShadow = true;
-        mesh.receiveShadow = true;
-        
-        // Apply options
-        if (options.position) mesh.position.copy(options.position);
-        if (options.rotation) mesh.rotation.copy(options.rotation);
-        if (options.scale) mesh.scale.copy(options.scale);
-        if (options.name) mesh.name = options.name;
-
-        scene.add(mesh);
-        objects.push(mesh);
-        
-        if (options.parent) {
-            parentObject(mesh, options.parent, false); // Don't record history for this
-        }
-        
-        // Apply current shading mode
-        applyShading(mesh, shadingSwitcher.value);
-        
-        if (recordHistoryFlag) {
-            recordHistory({
-                type: 'add',
-                object: serializeObject(mesh) // FIX: Was 'light'
-            });
-        }
-        
-        selectObject(mesh); // FIX: Was 'light'
-        updateOutliner();
-        return mesh; // FIX: Was 'light'
-    }
-    
-    // --- FIX: This function was missing ---
-    function addLight(type, options = {}, recordHistoryFlag = true) {
-        let light;
-        const color = options.color || 0xffffff;
-        const intensity = options.intensity || 1;
-
-        switch (type) {
-            case 'point':
-                light = new THREE.PointLight(color, intensity, options.distance || 0, options.decay || 2);
-                light.name = 'PointLight';
-                light.helper = new THREE.PointLightHelper(light, 0.5);
-                break;
-            case 'spot':
-                light = new THREE.SpotLight(color, intensity, options.distance || 0, options.angle || Math.PI / 3, options.penumbra || 0, options.decay || 2);
-                light.name = 'SpotLight';
-                light.position.set(2, 5, 0); // Default spot position
-                light.target.position.set(0, 0, 0);
-                light.add(light.target);
-                light.helper = new THREE.SpotLightHelper(light);
-                break;
-            default:
-                return;
-        }
-
-        light.castShadow = true;
-        
-        // Apply options
-        if (options.position) light.position.copy(options.position);
-        if (options.rotation) light.rotation.copy(options.rotation);
-        if (options.scale) light.scale.copy(options.scale);
-        if (options.name) light.name = options.name;
-        
-        if(light.helper) scene.add(light.helper);
-        scene.add(light);
-        objects.push(light);
-        
-        if (options.parent) {
-            parentObject(light, options.parent, false);
-        }
-
-        if (recordHistoryFlag) {
-            recordHistory({
-                type: 'add',
-                object: serializeObject(light)
-            });
-        }
-        
-        selectObject(light);
-        updateOutliner();
-        return light;
-    }
-    // --- End Fix ---
-    
-    // --- FIX: This was misnamed as addLight ---
-    function addCamera(options = {}, recordHistoryFlag = true) {
-        const newCam = new THREE.PerspectiveCamera(options.fov || 50, 16 / 9, 0.1, 1000);
-        newCam.name = options.name || "Camera";
-        
-        if (options.position) newCam.position.copy(options.position);
-        else newCam.position.set(3, 3, 3);
-        
-        if (options.rotation) newCam.rotation.copy(options.rotation);
-        else newCam.lookAt(0, 0, 0);
-        
-        if (options.scale) newCam.scale.copy(options.scale);
-
-        const helper = new THREE.CameraHelper(newCam);
-        newCam.helper = helper;
-        scene.add(helper);
-        
-        scene.add(newCam);
-        objects.push(newCam);
-        
-        if (options.parent) {
-            parentObject(newCam, options.parent, false);
-        }
-
-        if (recordHistoryFlag) {
-            recordHistory({
-                type: 'add',
-                object: serializeObject(newCam)
-            });
-        }
-        
-        selectObject(newCam);
-        updateOutliner();
-        updateCameraMenu();
-        return newCam;
-    }
-    
-    // --- Add Low Poly Assets ---
-    function addAsset(type, options = {}, recordHistoryFlag = true) {
-        let assetGroup;
-        
-        switch(type) {
-            case 'tree':
-                assetGroup = createLowPolyTree();
-                break;
-            case 'house':
-                assetGroup = createLowPolyHouse();
-                break;
-            case 'car':
-                assetGroup = createLowPolyCar();
-                break;
-            case 'sword':
-                assetGroup = createLowPolySword();
-                break;
-            case 'person':
-                assetGroup = createLowPolyPerson();
-                break;
-            case 'mug':
-                assetGroup = createLowPolyMug();
-                break;
-            case 'rocket':
-                assetGroup = createLowPolyRocket();
-                break;
-            case 'mountain':
-                assetGroup = createLowPolyMountain();
-                break;
-            default:
-                return;
-        }
-        
-        // Apply options
-        if (options.position) assetGroup.position.copy(options.position);
-        if (options.rotation) assetGroup.rotation.copy(options.rotation);
-        if (options.scale) assetGroup.scale.copy(options.scale);
-        if (options.name) assetGroup.name = options.name;
-        
-        // Add to scene and master list
-        scene.add(assetGroup);
-        objects.push(assetGroup);
-        
-        // Also add all children to master list so they can be selected individually
-        assetGroup.traverse(child => {
-            if (child.isMesh) {
-                objects.push(child);
-            }
-        });
-        
-        if (options.parent) {
-            parentObject(assetGroup, options.parent, false);
-        }
-        
-        // Apply current shading mode
-        applyShading(assetGroup, shadingSwitcher.value);
-        
-        if (recordHistoryFlag) {
-            recordHistory({
-                type: 'add',
-                object: serializeObject(assetGroup)
-            });
-        }
-        
-        selectObject(assetGroup);
-        updateOutliner();
-        return assetGroup;
-    }
-    
-    function createLowPolyTree() {
-        const group = new THREE.Group();
-        group.name = "Tree";
-        
-        const trunkMat = materials.wood.clone();
-        const leavesMat = materials.leaves.clone();
-        
-        const trunkGeom = new THREE.CylinderGeometry(0.2, 0.3, 2, 8);
-        const trunk = new THREE.Mesh(trunkGeom, trunkMat);
-        trunk.name = "Trunk";
-        trunk.position.y = 1;
-        trunk.castShadow = true;
-        group.add(trunk);
-        
-        const leavesGeom = new THREE.IcosahedronGeometry(1.2, 0);
-        const leaves = new THREE.Mesh(leavesGeom, leavesMat);
-        leaves.name = "Leaves";
-        leaves.position.y = 2.5;
-        leaves.castShadow = true;
-        group.add(leaves);
-        
-        return group;
-    }
-    
-    function createLowPolyHouse() {
-        const group = new THREE.Group();
-        group.name = "House";
-        
-        const baseMat = materials.houseWall.clone();
-        const roofMat = materials.houseRoof.clone();
-        
-        const baseGeom = new THREE.BoxGeometry(3, 2, 2.5);
-        const base = new THREE.Mesh(baseGeom, baseMat);
-        base.name = "Base";
-        base.position.y = 1;
-        base.castShadow = true;
-        group.add(base);
-        
-        const roofGeom = new THREE.ConeGeometry(2.5, 1.5, 4);
-        const roof = new THREE.Mesh(roofGeom, roofMat);
-        roof.name = "Roof";
-        roof.position.y = 2.75; // 2 (base) + 1.5/2
-        roof.rotation.y = Math.PI / 4;
-        roof.castShadow = true;
-        group.add(roof);
-        
-        return group;
-    }
-    
-    function createLowPolyCar() {
-        const group = new THREE.Group();
-        group.name = "Car";
-        
-        const bodyMat = materials.carBody.clone();
-        const glassMat = materials.carWindow.clone();
-        const wheelMat = materials.carWheel.clone();
-        
-        // Body
-        const bodyGeom = new THREE.BoxGeometry(2, 0.8, 1.2);
-        const body = new THREE.Mesh(bodyGeom, bodyMat);
-        body.name = "Body";
-        body.position.y = 0.6;
-        body.castShadow = true;
-        group.add(body);
-        
-        // Cabin
-        const cabinGeom = new THREE.BoxGeometry(1.2, 0.7, 1);
-        const cabin = new THREE.Mesh(cabinGeom, glassMat);
-        cabin.name = "Cabin";
-        cabin.position.y = 1.35;
-        cabin.position.x = -0.2;
-        cabin.castShadow = true;
-        group.add(cabin);
-        
-        // Wheels
-        const wheelGeom = new THREE.CylinderGeometry(0.3, 0.3, 0.2, 16);
-        const wheelFL = new THREE.Mesh(wheelGeom, wheelMat);
-        wheelFL.name = "Wheel_FL";
-        wheelFL.rotation.x = Math.PI / 2;
-        wheelFL.position.set(0.7, 0.3, 0.6);
-        group.add(wheelFL);
-        
-        const wheelFR = wheelFL.clone(); wheelFR.name = "Wheel_FR";
-        wheelFR.position.z = -0.6;
-        group.add(wheelFR);
-        
-        const wheelRL = wheelFL.clone(); wheelRL.name = "Wheel_RL";
-        wheelRL.position.x = -0.7;
-        group.add(wheelRL);
-        
-        const wheelRR = wheelFR.clone(); wheelRR.name = "Wheel_RR";
-        wheelRR.position.x = -0.7;
-        group.add(wheelRR);
-        
-        return group;
-    }
-    
-    function createLowPolySword() {
-        const group = new THREE.Group();
-        group.name = "Sword";
-        
-        const bladeMat = materials.swordBlade.clone();
-        const hiltMat = materials.swordHilt.clone();
-        
-        // Blade
-        const bladeGeom = new THREE.BoxGeometry(0.1, 2, 0.05);
-        const blade = new THREE.Mesh(bladeGeom, bladeMat);
-        blade.name = "Blade";
-        blade.position.y = 1;
-        blade.castShadow = true;
-        group.add(blade);
-        
-        // Hilt
-        const hiltGeom = new THREE.BoxGeometry(0.3, 0.1, 0.1);
-        const hilt = new THREE.Mesh(hiltGeom, hiltMat);
-        hilt.name = "Hilt";
-        hilt.castShadow = true;
-        group.add(hilt);
-        
-        // Handle
-        const handleGeom = new THREE.CylinderGeometry(0.05, 0.05, 0.4, 8);
-        const handle = new THREE.Mesh(handleGeom, hiltMat);
-        handle.name = "Handle";
-        handle.position.y = -0.25;
-        handle.castShadow = true;
-        group.add(handle);
-        
-        return group;
-    }
-    
-    function createLowPolyPerson() {
-        const group = new THREE.Group();
-        group.name = "Person";
-        
-        const headMat = materials.personSkin.clone();
-        const shirtMat = materials.personShirt.clone();
-        const pantsMat = materials.personPants.clone();
-        
-        // Head
-        const headGeom = new THREE.BoxGeometry(0.4, 0.4, 0.4);
-        const head = new THREE.Mesh(headGeom, headMat);
-        head.name = "Head";
-        head.position.y = 1.7;
-        head.castShadow = true;
-        group.add(head);
-        
-        // Torso
-        const torsoGeom = new THREE.BoxGeometry(0.6, 0.8, 0.3);
-        const torso = new THREE.Mesh(torsoGeom, shirtMat);
-        torso.name = "Torso";
-        torso.position.y = 1.1;
-        torso.castShadow = true;
-        group.add(torso);
-        
-        // Left Arm
-        const armGeom = new THREE.BoxGeometry(0.2, 0.7, 0.2);
-        const armL = new THREE.Mesh(armGeom, headMat); // Skin
-        armL.name = "Arm_L";
-        armL.position.set(-0.4, 1.1, 0);
-        armL.castShadow = true;
-        group.add(armL);
-        
-        // Right Arm
-        const armR = armL.clone();
-        armR.name = "Arm_R";
-        armR.position.x = 0.4;
-        group.add(armR);
-        
-        // Left Leg
-        const legGeom = new THREE.BoxGeometry(0.25, 0.7, 0.25);
-        const legL = new THREE.Mesh(legGeom, pantsMat);
-        legL.name = "Leg_L";
-        legL.position.set(-0.15, 0.35, 0);
-        legL.castShadow = true;
-        group.add(legL);
-        
-        // Right Leg
-        const legR = legL.clone();
-        legR.name = "Leg_R";
-        legR.position.x = 0.15;
-        group.add(legR);
-        
-        return group;
-    }
-    
-    // --- Save / Load / Export ---
-    
-    function serializeObject(object) {
-        if (!object || object === camera) return null; // Don't save main viewport cam
-        
-        // Don't save children of groups (they are saved by the parent)
-        if (object.parent && object.parent.isGroup && objects.includes(object.parent)) {
-            return null;
-        }
-        
-        const data = {
-            uuid: object.uuid,
-            name: object.name,
-            parentUUID: object.parent && object.parent !== scene ? object.parent.uuid : null,
-            transform: {
-                position: object.position.clone(),
-                rotation: object.rotation.clone(),
-                scale: object.scale.clone(),
-            }
-        };
-        
-        if (object.isGroup && !object.userData.isImported) { // Check if it's our asset, not import
-            // This is one of our assets
-            data.type = 'asset';
-            // FIX: Handle new asset types
-            const assetName = object.name.toLowerCase();
-            if (['tree', 'house', 'car', 'sword', 'person', 'mug', 'rocket', 'mountain'].includes(assetName)) {
-                data.assetType = assetName;
-            } else {
-                data.assetType = 'unknown'; // Fallback
-            }
-            
-            // We also need to save the transforms of all its children
-            data.children = [];
-            object.traverse(child => {
-                if (child.isMesh) {
-                    data.children.push({
-                        name: child.name,
-                        position: child.position.clone(),
-                        rotation: child.rotation.clone(),
-                        scale: child.scale.clone(),
-                        material: {
-                            color: child.material.color.getHex(),
-                            roughness: child.material.roughness,
-                            metalness: child.material.metalness,
-                            emissive: child.material.emissive.getHex(),
-                            emissiveIntensity: child.material.emissiveIntensity,
-                            opacity: child.material.opacity,
-                            wireframe: child.material.wireframe,
-                        }
-                    });
-                }
-            });
-        } else if (object.isMesh) {
-            data.type = 'mesh';
-            data.geometryType = object.geometry.type.replace('Geometry', '').toLowerCase();
-            data.material = {
-                color: object.material.color.getHex(),
-                roughness: object.material.roughness,
-                metalness: object.material.metalness,
-                emissive: object.material.emissive.getHex(),
-                emissiveIntensity: object.material.emissiveIntensity,
-                opacity: object.material.opacity,
-                wireframe: object.material.wireframe,
-            };
-        } else if (object.isPointLight) {
-            data.type = 'light';
-            data.lightType = 'point';
-            data.lightProps = {
-                color: object.color.getHex(),
-                intensity: object.intensity,
-                distance: object.distance,
-                decay: object.decay,
-            };
-        } else if (object.isSpotLight) {
-            data.type = 'light';
-            data.lightType = 'spot';
-            data.lightProps = {
-                color: object.color.getHex(),
-                intensity: object.intensity,
-                distance: object.distance,
-                decay: object.decay,
-                angle: object.angle,
-                penumbra: object.penumbra,
-            };
-        } else if (object.isAmbientLight) {
-            data.type = 'light';
-            data.lightType = 'ambient';
-            data.lightProps = {
-                color: object.color.getHex(),
-                intensity: object.intensity
-            };
-        } else if (object.isDirectionalLight) {
-             data.type = 'light';
-            data.lightType = 'directional';
-            data.lightProps = {
-                color: object.color.getHex(),
-                intensity: object.intensity
-            };
-        } else if (object.isPerspectiveCamera) {
-            data.type = 'camera';
-            data.cameraProps = {
-                fov: object.fov,
-            };
-        } else if (object.userData.isImported) {
-             // Imported models are not saved
-             return null;
-        } else {
-            // Unhandled type
-            return null;
-        }
-        
-        return data;
-    }
-    
-    function saveSceneToFile() {
-        const sceneData = objects
-            .map(serializeObject)
-            .filter(obj => obj !== null); // Filter out nulls
-            
-        const json = JSON.stringify(sceneData, null, 2);
-        const blob = new Blob([json], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'scene.dough';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-    }
-    
-    function loadSceneFromData(data) {
-        clearScene();
-        addDefaultLights(); // ClearScene removes them, add them back
-        
-        const objectMap = new Map(); // To store created objects by UUID
-        
-        // --- First Pass: Create all objects ---
-        data.forEach(objData => {
-            let newObj;
-            const options = {
-                name: objData.name,
-                position: objData.transform.position,
-                rotation: objData.transform.rotation,
-                scale: objData.transform.scale,
-            };
-            
-            if (objData.type === 'asset') {
-                newObj = addAsset(objData.assetType, options, false);
-                // Apply child transforms
-                if (newObj) {
-                    objData.children.forEach(childData => {
-                        const childMesh = newObj.getObjectByName(childData.name);
-                        if (childMesh) {
-                            childMesh.position.copy(childData.position);
-                            childMesh.rotation.copy(childData.rotation);
-                            childMesh.scale.copy(childData.scale);
-                            childMesh.material.color.set(childData.material.color);
-                            childMesh.material.roughness = childData.material.roughness;
-                            childMesh.material.metalness = childData.material.metalness;
-                            childMesh.material.emissive.set(childData.material.emissive);
-                            childMesh.material.emissiveIntensity = childData.material.emissiveIntensity;
-                            childMesh.material.opacity = childData.material.opacity;
-                            childMesh.material.wireframe = childData.material.wireframe;
-                        }
-                    });
-                }
-            } else if (objData.type === 'mesh') {
-                newObj = addPrimitive(objData.geometryType, {
-                    ...options,
-                    color: objData.material.color,
-                    roughness: objData.material.roughness,
-                    metalness: objData.material.metalness,
-                    emissive: objData.material.emissive,
-                    emissiveIntensity: objData.material.emissiveIntensity,
-                    opacity: objData.material.opacity,
-                    wireframe: objData.material.wireframe,
-                }, false);
-            } else if (objData.type === 'light') {
-                const lightOptions = {
-                    ...options,
-                    color: objData.lightProps.color,
-                    intensity: objData.lightProps.intensity,
-                    ...objData.lightProps
+            filteredChildren.forEach(obj => {
+                const div = document.createElement('div');
+                div.className = `outliner-item ${selectedObject === obj ? 'selected' : ''}`;
+                div.innerHTML = `${getIcon(obj)} ${obj.name}`;
+                div.dataset.uuid = obj.uuid;
+                // Add delete button
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'text-red-400 hover:text-red-500 text-xs';
+                deleteBtn.innerHTML = '<i class="fas fa-trash"></i>';
+                deleteBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    deleteObject(obj);
                 };
-                
-                if (objData.lightType === 'ambient' || objData.lightType === 'directional') {
-                    // Find and update existing lights
-                    const light = objects.find(o => o.name.toLowerCase().startsWith(objData.lightType));
-                    if (light) {
-                        light.color.set(lightOptions.color);
-                        light.intensity = lightOptions.intensity;
-                        light.name = lightOptions.name;
-                        newObj = light;
-                    }
-                } else {
-                     newObj = addLight(objData.lightType, lightOptions, false);
-                }
-            } else if (objData.type === 'camera') {
-                newObj = addCamera({
-                    ...options,
-                    ...objData.cameraProps
-                }, false);
-            } else if (objData.type === 'import') {
-                // Can't load imports from .dough file, just skip
-                console.warn("Skipping imported model, not supported by .dough save:", objData.name);
-            }
-            
-            if (newObj) {
-                // Overwrite UUID to match saved file
-                newObj.uuid = objData.uuid;
-                objectMap.set(newObj.uuid, newObj);
-            }
-        });
-        
-        // --- Second Pass: Set up parenting ---
-        data.forEach(objData => {
-            if (objData.parentUUID) {
-                const child = objectMap.get(objData.uuid);
-                const parent = objectMap.get(objData.parentUUID);
-                if (child && parent) {
-                    parentObject(child, parent, false);
-                }
-            }
-        });
-        
-        updateOutliner();
-        updateCameraMenu();
-        deselectAll();
-    }
-    
-    function exportScene(format) {
-        const exporter = format === 'glb' ? new THREE.GLTFExporter() : new THREE.OBJExporter();
-        
-        // Export only visible mesh objects
-        const exportObjects = objects.filter(o => o.isMesh && o.visible);
-        
-        if (exportObjects.length === 0) {
-            console.warn("No visible mesh objects to export.");
-            return;
+                div.appendChild(deleteBtn);
+                div.onclick = (e) => selectObject(obj);
+                outliner.appendChild(div);
+            });
         }
 
-        const options = {
-            binary: true // for GLB
-        };
-        
-        // We must export from the scene directly to preserve hierarchy
-        // Clone the scene and remove non-mesh/group objects
-        const exportScene = scene.clone();
-        const objectsToRemove = [];
-        exportScene.traverse(obj => {
-            if (!obj.isMesh && !obj.isGroup && !obj.isScene) {
-                objectsToRemove.push(obj);
+        function deleteObject(object) {
+            if (object === selectedObject) {
+                selectObject(null);
             }
-        });
-        objectsToRemove.forEach(obj => obj.parent.remove(obj));
-
-        exporter.parse(exportScene, (result) => {
-            let output = result;
-            let filename = `scene.${format}`;
-            let mimeType = 'model/gltf-binary';
-            
-            if (format === 'obj') {
-                output = result;
-                mimeType = 'text/plain';
+            if (object.isMesh || object.isLight || object.isGroup) {
+                scene.remove(object);
+                objects = objects.filter(obj => obj !== object);
+                delete animationData[object.uuid];
+                if (object.isMesh) {
+                    object.geometry.dispose();
+                    if (Array.isArray(object.material)) {
+                        object.material.forEach(m => m.dispose());
+                    } else {
+                        object.material.dispose();
+                    }
+                }
+                notify(`Deleted: ${object.name}`, 'success');
+                updateOutliner();
+                updateTimelineUI();
             } else {
-                output = new Blob([result], { type: mimeType });
+                notify("Cannot delete this object type.", 'error');
             }
-            
-            const url = URL.createObjectURL(new Blob([output], { type: mimeType }));
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+        }
 
-        }, (error) => {
-            console.error('An error happened during export:', error);
-        }, options);
-    }
-    
-    // --- Undo / Redo ---
-    function recordHistory(action) {
-        if (isUndoingRedoing) return; // Prevent loops
-        
-        // Clear "future" history if we make a new action
-        if (historyIndex < history.length - 1) {
-            history.splice(historyIndex + 1);
+        function selectObject(object) {
+            if (selectedObject) {
+                const oldDiv = document.querySelector(`.outliner-item[data-uuid="${selectedObject.uuid}"]`);
+                if (oldDiv) oldDiv.classList.remove('selected');
+            }
+            selectedObject = object;
+            if (selectedObject && (selectedObject.isMesh || selectedObject.isLight || selectedObject.isGroup)) {
+                const newDiv = document.querySelector(`.outliner-item[data-uuid="${selectedObject.uuid}"]`);
+                if (newDiv) newDiv.classList.add('selected');
+                transformControls.attach(selectedObject);
+                updateInspector(selectedObject);
+            } else {
+                transformControls.detach();
+                updateInspector(null);
+            }
+            updateTimelineUI();
         }
-        
-        // --- Smart History ---
-        const lastAction = history[history.length - 1];
-        if (action.type === 'transform' && lastAction && 
-            lastAction.type === 'transform' && 
-            lastAction.objectUUID === action.objectUUID) 
-        {
-            action.before = lastAction.before || lastAction.transform;
-            history[history.length - 1] = action;
-        } else if (action.type === 'vertexMove' && lastAction &&
-            lastAction.type === 'vertexMove' &&
-            lastAction.objectUUID === action.objectUUID &&
-            lastAction.vertexIndex === action.vertexIndex)
-        {
-             action.before = lastAction.before || lastAction.position;
-             history[history.length - 1] = action;
-        } else {
-            // Capture 'before' state
-            if (action.type === 'transform') {
-                const obj = findObjectByUUID(action.objectUUID);
-                if (obj) {
-                     action.before = {
-                        position: obj.position.clone(),
-                        rotation: obj.rotation.clone(),
-                        scale: obj.scale.clone(),
-                    };
-                }
-            }
-            if (action.type === 'vertexMove') {
-                const obj = findObjectByUUID(action.objectUUID);
-                if (obj) {
-                    const pos = obj.geometry.attributes.position.array;
-                    action.before = pos.slice(action.vertexIndex*3, action.vertexIndex*3+3);
-                }
-            }
-            if (action.type === 'rename') {
-                action.before = action.oldName;
-            }
-            if (action.type === 'visibility') {
-                action.before = action.oldValue;
-            }
-            if (action.type === 'parent') {
-                action.before = action.oldParentUUID;
-            }
 
-            history.push(action);
-        }
-        
-        historyIndex = history.length - 1;
-        updateEditMenu();
-    }
-    
-    function undo() {
-        if (historyIndex < 0) return; // Nothing to undo
-        isUndoingRedoing = true;
-        
-        const action = history[historyIndex];
-        
-        switch(action.type) {
-            case 'add':
-                {
-                    const obj = findObjectByUUID(action.object.uuid);
-                    if (obj) deleteObject(obj, false);
-                    break;
-                }
-            case 'delete':
-                {
-                    const newObj = addObjectFromData(action.object, false);
-                    if (newObj) objects.splice(action.index, 0, newObj);
-                    break;
-                }
-            case 'transform':
-                {
-                    const tObj = findObjectByUUID(action.objectUUID);
-                    if (tObj) {
-                        if (action.before) {
-                            tObj.position.copy(action.before.position);
-                            tObj.rotation.copy(action.before.rotation);
-                            tObj.scale.copy(action.before.scale);
-                        }
-                        const temp = action.transform;
-                        action.transform = action.before;
-                        action.before = temp;
-                        if (selectedObject === tObj) updateInspector();
-                    }
-                    break;
-                }
-            case 'vertexMove':
-                {
-                    const vObj = findObjectByUUID(action.objectUUID);
-                    if (vObj) {
-                        const pos = vObj.geometry.attributes.position;
-                        pos.setXYZ(action.vertexIndex, action.before[0], action.before[1], action.before[2]);
-                        pos.needsUpdate = true;
-                        
-                        const temp = action.position;
-                        action.position = action.before;
-                        action.before = temp;
-                        
-                        if (selectedObject === vObj) updateVertexPoints();
-                        if (selectedObject === vObj && selectedVertexIndex === action.vertexIndex) {
-                            selectVertex(selectedVertexIndex); // update gizmo
-                            updateInspector();
-                        }
-                    }
-                    break;
-                }
-            case 'rename':
-                {
-                    const rObj = findObjectByUUID(action.objectUUID);
-                    if(rObj) rObj.name = action.oldName;
-                    const tempName = action.oldName;
-                    action.oldName = action.newName;
-                    action.newName = tempName;
-                    if(selectedObject === rObj) updateInspector();
-                    if(rObj.isCamera) updateCameraMenu();
-                    updateOutliner();
-                    break;
-                }
-            case 'visibility':
-                {
-                    const visObj = findObjectByUUID(action.objectUUID);
-                    if(visObj) {
-                        visObj.visible = action.oldValue;
-                        if(visObj.helper) visObj.helper.visible = action.oldValue;
-                    }
-                    const tempVis = action.oldValue;
-                    action.oldValue = action.newValue;
-                    action.newValue = tempVis;
-                    updateOutliner();
-                    break;
-                }
-            case 'parent':
-                {
-                    const pObj = findObjectByUUID(action.objectUUID);
-                    const oldParent = action.oldParentUUID === 'scene' ? scene : findObjectByUUID(action.oldParentUUID);
-                    if (pObj && oldParent) {
-                        parentObject(pObj, oldParent, false);
-                    }
-                    // Swap for redo
-                    const tempParent = action.oldParentUUID;
-                    action.oldParentUUID = action.newParentUUID;
-                    action.newParentUUID = tempParent;
-                    break;
-                }
-        }
-        
-        historyIndex--;
-        updateEditMenu();
-        updateOutliner();
-        render();
-        isUndoingRedoing = false;
-    }
-    
-    function redo() {
-        if (historyIndex >= history.length - 1) return; // Nothing to redo
-        isUndoingRedoing = true;
-        historyIndex++;
-        
-        const action = history[historyIndex];
-        
-        switch(action.type) {
-            case 'add':
-                addObjectFromData(action.object, false);
-                break;
-            case 'delete':
-                {
-                    const obj = findObjectByUUID(action.object.uuid);
-                    if (obj) deleteObject(obj, false);
-                    break;
-                }
-            case 'transform':
-                {
-                    const tObj = findObjectByUUID(action.objectUUID);
-                    if (tObj) {
-                        if (action.before) {
-                            tObj.position.copy(action.before.position);
-                            tObj.rotation.copy(action.before.rotation);
-                            tObj.scale.copy(action.before.scale);
-                        }
-                        const temp = action.transform;
-                        action.transform = action.before;
-                        action.before = temp;
-                        if (selectedObject === tObj) updateInspector();
-                    }
-                    break;
-                }
-            case 'vertexMove':
-                {
-                    const vObj = findObjectByUUID(action.objectUUID);
-                    if (vObj) {
-                        const pos = vObj.geometry.attributes.position;
-                        pos.setXYZ(action.vertexIndex, action.before[0], action.before[1], action.before[2]);
-                        pos.needsUpdate = true;
-                        
-                        const temp = action.position;
-                        action.position = action.before;
-                        action.before = temp;
-                        
-                        if (selectedObject === vObj) updateVertexPoints();
-                        if (selectedObject === vObj && selectedVertexIndex === action.vertexIndex) {
-                            selectVertex(selectedVertexIndex); // update gizmo
-                            updateInspector();
-                        }
-                    }
-                    break;
-                }
-            case 'rename':
-                 {
-                    const rObj = findObjectByUUID(action.objectUUID);
-                    if(rObj) rObj.name = action.oldName; // "oldName" now has the "redo" name
-                    const tempName = action.oldName;
-                    action.oldName = action.newName;
-                    action.newName = tempName;
-                    if(selectedObject === rObj) updateInspector();
-                    if(rObj.isCamera) updateCameraMenu();
-                    updateOutliner();
-                    break;
-                }
-            case 'visibility':
-                {
-                    const visObj = findObjectByUUID(action.objectUUID);
-                    if(visObj) {
-                        visObj.visible = action.oldValue; // "oldValue" now has "redo" value
-                        if(visObj.helper) visObj.helper.visible = action.oldValue;
-                    }
-                    const tempVis = action.oldValue;
-                    action.oldValue = action.newValue;
-                    action.newValue = tempVis;
-                    updateOutliner();
-                    break;
-                }
-            case 'parent':
-                {
-                    const pObj = findObjectByUUID(action.objectUUID);
-                    const newParent = action.oldParentUUID === 'scene' ? scene : findObjectByUUID(action.oldParentUUID); // Swapped
-                    if (pObj && newParent) {
-                        parentObject(pObj, newParent, false);
-                    }
-                    // Swap back
-                    const tempParent = action.oldParentUUID;
-                    action.oldParentUUID = action.newParentUUID;
-                    action.newParentUUID = tempParent;
-                    break;
-                }
-        }
-        
-        updateEditMenu();
-        updateOutliner();
-        render();
-        isUndoingRedoing = false;
-    }
-    
-    function addObjectFromData(objData, recordHistoryFlag) {
-        let newObj;
-        const options = {
-            name: objData.name,
-            position: objData.transform.position,
-            rotation: objData.transform.rotation,
-            scale: objData.transform.scale,
-        };
-            
-        if (objData.type === 'asset') {
-            newObj = addAsset(objData.assetType, options, recordHistoryFlag);
-            // Apply child transforms
-            if (newObj) {
-                objData.children.forEach(childData => {
-                    const childMesh = newObj.getObjectByName(childData.name);
-                    if (childMesh) {
-                        childMesh.position.copy(childData.position);
-                        childMesh.rotation.copy(childData.rotation);
-                        childMesh.scale.copy(childData.scale);
-                        childMesh.material.color.set(childData.material.color);
-                        childMesh.material.roughness = childData.material.roughness;
-                        childMesh.material.metalness = childData.material.metalness;
-                        childMesh.material.emissive.set(childData.material.emissive);
-                        childMesh.material.emissiveIntensity = childData.material.emissiveIntensity;
-                        childMesh.material.opacity = childData.material.opacity;
-                        childMesh.material.wireframe = childData.material.wireframe;
-                    }
-                });
-            }
-        } else if (objData.type === 'mesh') {
-            newObj = addPrimitive(objData.geometryType, {
-                ...options,
-                ...objData.material
-            }, recordHistoryFlag);
-        } else if (objData.type === 'light') {
-             if (objData.lightType !== 'ambient' && objData.lightType !== 'directional') {
-                 newObj = addLight(objData.lightType, {
-                    ...options,
-                    ...objData.lightProps
-                }, recordHistoryFlag);
-             }
-        } else if (objData.type === 'camera') {
-            newObj = addCamera({ ...options, ...objData.cameraProps }, recordHistoryFlag);
-        }
-        
-        // Overwrite UUID to match history
-        if(newObj) newObj.uuid = objData.uuid;
-        return newObj;
-    }
-    
-    function findObjectByUUID(uuid) {
-        return objects.find(o => o.uuid === uuid);
-    }
-    
-    function updateEditMenu() {
-        const undoBtn = document.getElementById('undo');
-        const redoBtn = document.getElementById('redo');
-        const cutBtn = document.getElementById('cut');
-        const copyBtn = document.getElementById('copy');
-        const pasteBtn = document.getElementById('paste');
-        
-        historyIndex < 0 ? undoBtn.classList.add('disabled') : undoBtn.classList.remove('disabled');
-        historyIndex >= history.length - 1 ? redoBtn.classList.add('disabled') : redoBtn.classList.remove('disabled');
-        
-        // Cannot cut/copy the main viewport camera
-        (!selectedObject || selectedObject === camera) ? cutBtn.classList.add('disabled') : cutBtn.classList.remove('disabled');
-        (!selectedObject || selectedObject === camera) ? copyBtn.classList.add('disabled') : copyBtn.classList.remove('disabled');
-        !clipboard ? pasteBtn.classList.add('disabled') : pasteBtn.classList.remove('disabled');
-    }
-    
-    // --- Cut / Copy / Paste ---
-    function cutObject() {
-        if (!selectedObject || selectedObject === camera) return;
-        clipboard = serializeObject(selectedObject);
-        clipboardOperation = 'cut';
-        deleteObject(selectedObject, true);
-        updateEditMenu();
-    }
-    
-    function copyObject() {
-        if (!selectedObject || selectedObject === camera) return;
-        clipboard = serializeObject(selectedObject);
-        clipboardOperation = 'copy';
-        updateEditMenu();
-    }
-    
-    function pasteObject() {
-        if (!clipboard) return;
-        
-        const data = JSON.parse(JSON.stringify(clipboard)); // Deep copy
-        
-        // Clear UUID so it's a new object
-        data.uuid = THREE.MathUtils.generateUUID();
-        // Offset it
-        data.transform.position.x += 0.5;
-        data.transform.position.z += 0.5;
-        // Un-parent it
-        data.parentUUID = null;
-        
-        // Add from data
-        addObjectFromData(data, true);
-        
-        // If 'cut', clear clipboard
-        if (clipboardOperation === 'cut') {
-            clipboard = null;
-            clipboardOperation = null;
-        }
-        
-        updateEditMenu();
-    }
-
-    // --- Hotkeys ---
-    function initHotkeys() {
-        window.addEventListener('keydown', (e) => {
-            // Close menus on Escape
-            if (e.key === 'Escape') {
-                closeAllMenus();
-                hideAboutModal();
-                hideRenderModal();
-                // hideLibraryModal(); // No library modal to hide
-            }
-            
-            // Don't trigger shortcuts if user is typing in an input
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        function updateInspector(object) {
+            const inspector = document.getElementById('inspector-content');
+            inspector.innerHTML = '';
+            if (!object) {
+                inspector.innerHTML = '<div class="p-4 text-center text-gray-400 text-sm">Select an object in the Outliner to inspect its properties.</div>';
                 return;
             }
-            
-            // --- Mode Toggle ---
-            if (e.key === 'Tab') {
-                e.preventDefault();
-                if (selectedObject && !modeSwitcher.disabled) {
-                    setMode(currentMode === 'OBJECT' ? 'EDIT' : 'OBJECT');
-                }
+            // --- Name & Type ---
+            const nameGroup = document.createElement('div');
+            nameGroup.className = 'bg-gray-700 p-2 rounded-lg mx-2 space-y-2';
+            nameGroup.innerHTML = `
+                <h3 class="text-white font-bold text-lg">${object.name}</h3>
+                <div class="text-xs text-gray-400 border-t border-gray-600 pt-1">${object.type} (UUID: ${object.uuid.substring(0, 8)}...)</div>
+            `;
+            inspector.appendChild(nameGroup);
+            // --- Transform Group ---
+            const transformGroup = document.createElement('div');
+            transformGroup.className = 'bg-gray-700 p-2 rounded-lg mx-2 space-y-1';
+            transformGroup.innerHTML = `<h4 class="text-white font-semibold mb-1">Transform</h4>`;
+            const createVectorInput = (label, vector, property) => {
+                const div = document.createElement('div');
+                div.className = 'space-y-1 p-2 bg-gray-600 rounded';
+                div.innerHTML = `<label class="block text-xs font-medium text-gray-300 mb-1">${label}</label>`;
+                ['x', 'y', 'z'].forEach(axis => {
+                    const row = document.createElement('div');
+                    row.className = 'inspector-row';
+                    const axisLabel = document.createElement('label');
+                    axisLabel.textContent = axis.toUpperCase();
+                    row.appendChild(axisLabel);
+                    const input = document.createElement('input');
+                    input.type = 'number';
+                    input.step = property === 'rotation' ? 0.01 : 0.1;
+                    input.value = property === 'rotation' ? vector[axis] * (180 / Math.PI) : vector[axis];
+                    input.dataset.axis = axis;
+                    input.onchange = () => {
+                        let newValue = parseFloat(input.value);
+                        if (isNaN(newValue)) return;
+                        if (property === 'rotation') {
+                            vector[axis] = newValue * (Math.PI / 180);
+                        } else {
+                            vector[axis] = newValue;
+                        }
+                        object.updateMatrixWorld(true);
+                        transformControls.updateMatrixWorld();
+                        render();
+                    };
+                    row.appendChild(input);
+                    div.appendChild(row);
+                });
+                transformGroup.appendChild(div);
+            };
+            createVectorInput('Position (Meters)', object.position, 'position');
+            createVectorInput('Rotation (Degrees)', object.rotation, 'rotation');
+            createVectorInput('Scale (Factor)', object.scale, 'scale');
+            inspector.appendChild(transformGroup);
+            // --- Material Group (for meshes only) ---
+            if (object.isMesh && object.material && !Array.isArray(object.material)) {
+                const materialGroup = document.createElement('div');
+                materialGroup.className = 'bg-gray-700 p-2 rounded-lg mx-2 space-y-1';
+                materialGroup.innerHTML = `<h4 class="text-white font-semibold mb-1">Material</h4>`;
+                const colorRow = document.createElement('div');
+                colorRow.className = 'inspector-row';
+                colorRow.innerHTML = `<label for="color-picker">Color</label>`;
+                const colorInput = document.createElement('input');
+                colorInput.type = 'color';
+                colorInput.id = 'color-picker';
+                const colorToHex = (color) => `#${color.getHexString()}`;
+                colorInput.value = colorToHex(object.material.color);
+                colorInput.onchange = () => {
+                    const newColor = colorInput.value;
+                    object.material.color.set(newColor);
+                    render();
+                };
+                colorRow.appendChild(colorInput);
+                materialGroup.appendChild(colorRow);
+                inspector.appendChild(materialGroup);
             }
-
-            // --- Gizmo Tools ---
-            switch(e.key.toLowerCase()) {
-                case 'q':
-                    setTool('select');
-                    break;
-                case 'w':
-                    setTool('translate');
-                    break;
-                case 'e':
-                    setTool('rotate');
-                    break;
-                case 'r':
-                    setTool('scale');
-                    break;
-                case '0':
-                    e.preventDefault();
-                    snapViewportToActiveCamera();
-                    break;
-                case 'delete':
-                case 'backspace':
-                    if (selectedObject && selectedObject !== camera) { // Can't delete main cam
-                        deleteObject(selectedObject, true);
-                    }
-                    break;
-            }
-            
-            // --- Undo/Redo ---
-            if (e.ctrlKey || e.metaKey) {
-                switch(e.key.toLowerCase()) {
-                    case 'z':
-                        e.preventDefault();
-                        undo();
-                        break;
-                    case 'y':
-                        e.preventDefault();
-                        redo();
-                        break;
-                    case 'c':
-                        e.preventDefault();
-                        copyObject();
-                        break;
-                    case 'x':
-                        e.preventDefault();
-                        cutObject();
-                        break;
-                    case 'v':
-                        e.preventDefault();
-                        pasteObject();
-                        break;
-                }
-            }
-        });
-    }
-    
-    // --- Fullscreen ---
-    function toggleFullscreen() {
-        // FIX: Wrap in try/catch to prevent permissions errors in iframes
-        try {
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen();
-            } else if (document.exitFullscreen) {
-                document.exitFullscreen();
-            }
-            // After fullscreen change, renderer might need resize
-            setTimeout(forceResize, 300);
-        } catch (err) {
-            console.warn("Fullscreen API failed. This may be due to browser permissions or running in an iframe.", err);
-        }
-    }
-
-    // --- Viewport Snapping & Locking ---
-    function snapViewportToActiveCamera() {
-        if (!activeRenderCamera) return;
-
-        // 1. Get active camera's world transform
-        const newPos = new THREE.Vector3();
-        const newQuat = new THREE.Quaternion();
-        activeRenderCamera.getWorldPosition(newPos);
-        activeRenderCamera.getWorldQuaternion(newQuat);
-
-        // 2. Set viewport camera's transform
-        camera.position.copy(newPos);
-        camera.quaternion.copy(newQuat);
-
-        // 3. Set orbitControls target to be 5 units in front of the camera
-        // This is a common/simple way to set a reasonable pivot point
-        const target = new THREE.Vector3(0, 0, -5); // 5 units in front of camera's local space
-        target.applyQuaternion(newQuat); // Transform to world space
-        target.add(newPos); // Add camera's world position
-
-        orbitControls.target.copy(target);
-        
-        // 4. Update controls and render
-        orbitControls.update();
-        render();
-    }
-
-    function setCameraViewLock(isLocked) {
-        isCameraViewLocked = isLocked;
-        if (isCameraViewLocked) {
-            lockCameraViewMenuItem.innerHTML = '✓ Lock Camera to View';
-        } else {
-            lockCameraViewMenuItem.innerHTML = 'Lock Camera to View';
-        }
-    }
-
-    function toggleCameraViewLock() {
-        setCameraViewLock(!isCameraViewLocked);
-        if (isCameraViewLocked) {
-            snapViewportToActiveCamera(); // Snap to view when locking
-        }
-    }
-
-    // --- Modals ---
-    function initModals() {
-        // --- About Modal ---
-        aboutModalOverlay = document.getElementById('about-modal-overlay');
-        aboutModalContent = document.getElementById('about-modal-content');
-        aboutCloseX = document.getElementById('about-close-x');
-        aboutCloseBtn = document.getElementById('about-close-btn');
-
-        aboutModalOverlay.addEventListener('mousedown', () => hideAboutModal());
-        aboutCloseX.addEventListener('mousedown', () => hideAboutModal());
-        aboutCloseBtn.addEventListener('mousedown', () => hideAboutModal());
-        
-        // --- Library Modal (Initialize even though it's hidden) ---
-        libraryModalOverlay = document.getElementById('library-modal-overlay');
-        libraryModalContent = document.getElementById('library-modal-content');
-        libraryCloseX = document.getElementById('library-close-x');
-        libraryCloseBtn = document.getElementById('library-close-btn');
-        libraryModalBody = document.getElementById('library-modal-body');
-        libraryLoading = document.getElementById('library-loading');
-
-        if (libraryModalOverlay) { // Add safety checks
-            libraryModalOverlay.addEventListener('mousedown', () => hideLibraryModal());
-            libraryCloseX.addEventListener('mousedown', () => hideLibraryModal());
-            libraryCloseBtn.addEventListener('mousedown', () => hideLibraryModal());
         }
 
+        // --- Animation Logic ---
 
-        // --- Render Modal ---
-        renderModalOverlay = document.getElementById('render-modal-overlay');
-        renderModalContent = document.getElementById('render-modal-content');
-        renderCloseX = document.getElementById('render-close-x');
-        renderCloseBtn = document.getElementById('render-close-btn');
-        renderCanvas = document.getElementById('render-canvas');
-        renderStatus = document.getElementById('render-status');
-        saveRenderBtn = document.getElementById('save-render-btn');
-
-        renderModalOverlay.addEventListener('mousedown', () => hideRenderModal());
-        renderCloseX.addEventListener('mousedown', () => hideRenderModal());
-        renderCloseBtn.addEventListener('mousedown', () => hideRenderModal());
-        saveRenderBtn.addEventListener('click', () => saveRender());
-        
-        // Force hide on load
-        hideAboutModal();
-        hideRenderModal();
-        hideLibraryModal(); // Hide library modal
-    }
-
-    function showAboutModal() {
-        aboutModalOverlay.classList.remove('hidden');
-        aboutModalContent.classList.remove('hidden');
-    }
-    
-    function hideAboutModal() {
-        aboutModalOverlay.classList.add('hidden');
-        aboutModalContent.classList.add('hidden');
-    }
-    
-    function showLibraryModal() {
-        if(libraryModalOverlay) libraryModalOverlay.classList.remove('hidden');
-        if(libraryModalContent) libraryModalContent.classList.remove('hidden');
-    }
-    
-    function hideLibraryModal() {
-        if(libraryModalOverlay) libraryModalOverlay.classList.add('hidden');
-        if(libraryModalContent) libraryModalContent.classList.add('hidden');
-        if(libraryLoading) libraryLoading.classList.add('hidden'); // Hide loading if it was active
-    }
-
-    function showRenderModal() {
-        renderModalOverlay.classList.remove('hidden');
-        renderModalContent.classList.remove('hidden');
-        
-        // Reset state
-        renderStatus.classList.remove('hidden');
-        renderCanvas.classList.add('hidden');
-        saveRenderBtn.disabled = true;
-
-        // --- Start Render ---
-        // Use a timeout to allow the modal to appear before the heavy render stalls the browser
-        setTimeout(() => {
-            performRender();
-        }, 100);
-    }
-    
-    function hideRenderModal() {
-        renderModalOverlay.classList.add('hidden');
-        renderModalContent.classList.add('hidden');
-    }
-    
-    function performRender() {
-        const renderWidth = 1920;
-        const renderHeight = 1080;
-
-        // Use the main renderer, but resize it
-        const originalSize = new THREE.Vector2();
-        renderer.getSize(originalSize);
-        
-        // Detach gizmo for render
-        const gizmoWasAttached = transformControls.object;
-        if(gizmoWasAttached) transformControls.detach();
-        
-        // Set new size for main renderer
-        renderer.setSize(renderWidth, renderHeight);
-        
-        // Set render camera aspect
-        activeRenderCamera.aspect = renderWidth / renderHeight;
-        activeRenderCamera.updateProjectionMatrix();
-
-        // Render the scene with the ACTIVE camera
-        renderer.render(scene, activeRenderCamera);
-        
-        // Grab image data and draw to our modal's 2D canvas
-        const ctx = renderCanvas.getContext('2d');
-        ctx.drawImage(renderer.domElement, 0, 0, renderWidth, renderHeight);
-
-        // --- Restore original state ---
-        // Restore renderer size
-        renderer.setSize(originalSize.x, originalSize.y);
-        
-        // Restore viewport camera aspect
-        camera.aspect = originalSize.x / originalSize.y;
-        camera.updateProjectionMatrix();
-        
-        // Restore active camera aspect just in case
-        if (activeRenderCamera !== camera) {
-            activeRenderCamera.aspect = 16 / 9; // Default
-            activeRenderCamera.updateProjectionMatrix();
+        function findObjectByUUID(uuid) {
+            return objects.find(obj => obj.uuid === uuid);
         }
-        
-        // Re-attach gizmo
-        if(gizmoWasAttached) transformControls.attach(gizmoWasAttached);
-        
-        // Render one more time to fix viewport
-        render();
-        
-        // Update modal UI
-        renderStatus.classList.add('hidden');
-        renderCanvas.classList.remove('hidden');
-        saveRenderBtn.disabled = false;
-    }
-    
-    function saveRender() {
-        const url = renderCanvas.toDataURL('image/png');
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'render.png';
-        document.body.appendChild(a);
-        a.click();
-        return a;
-    }
-    
-    // --- Model Importing ---
-    function loadImportedModel(file) {
-        const objectURL = URL.createObjectURL(file);
-        const onProgress = (xhr) => {
-             console.log(`Model loading: ${(xhr.loaded / xhr.total * 100)}%`);
-        };
-        const onError = (error) => {
-            console.error('An error happened while loading the model:', error);
-            alert(`Error loading model: ${error.message || 'See console for details.'}`);
-            URL.revokeObjectURL(objectURL);
-        };
-        
-        const onLoad = (modelObject) => {
-            URL.revokeObjectURL(objectURL);
-            
-            const root = modelObject.scene || modelObject;
-            root.name = file.name.split('.')[0]; // Use file name as object name
-            
-            // --- Auto-scale and center ---
-            const box = new THREE.Box3().setFromObject(root);
-            const size = box.getSize(new THREE.Vector3());
-            const center = box.getCenter(new THREE.Vector3());
-            
-            const maxDim = Math.max(size.x, size.y, size.z);
-            if (maxDim > 0) { // Avoid division by zero for empty models
-                const scale = 5 / maxDim; // Scale to ~5 units
-                root.scale.set(scale, scale, scale);
-                
-                // Recalculate center *after* scaling
-                const newCenter = new THREE.Box3().setFromObject(root).getCenter(new THREE.Vector3());
-                root.position.sub(newCenter);
-            }
-            
-            // --- Setup ---
-            root.userData.isImported = true;
-            root.userData.url = file.name; // Just for reference
-            
-            // Make all children cast/receive shadows
-            root.traverse(child => {
-                if (child.isMesh) {
-                    child.castShadow = true;
-                    child.receiveShadow = true;
+
+        function updateTimelineUI() {
+            currentFrameDisplay.textContent = `Frame: ${Math.round(currentFrame)} / ${MAX_FRAME}`;
+            const percent = currentFrame / MAX_FRAME;
+            const scrubber = document.getElementById('timeline-scrubber');
+            const scrubberWidth = scrubber.clientWidth;
+            scrubberHandle.style.left = `${(scrubberWidth * percent) - 1}px`;
+            scrubberBar.style.width = `${percent * 100}%`;
+            keyframeMarkers.innerHTML = '';
+            const targetUUIDs = selectedObject ? [selectedObject.uuid] : Object.keys(animationData);
+            targetUUIDs.forEach(uuid => {
+                const keyframes = animationData[uuid];
+                if (!keyframes) return;
+                for (const frame in keyframes) {
+                    const marker = document.createElement('div');
+                    marker.className = 'keyframe-marker';
+                    const markerPercent = (parseInt(frame) / MAX_FRAME) * 100;
+                    marker.style.left = `calc(${markerPercent}% - 2.5px)`;
+                    const obj = findObjectByUUID(uuid);
+                    marker.title = `${obj ? obj.name : 'Object'} - Frame ${frame}`;
+                    keyframeMarkers.appendChild(marker);
                 }
             });
-
-            scene.add(root);
-            objects.push(root);
-            
-            // Apply current shading mode to the new object
-            applyShading(root, shadingSwitcher.value);
-            
-            selectObject(root);
-            updateOutliner();
-            
-            // Imported models do not support Undo/Redo
-            // recordHistory({ type: 'add', ... });
-        };
-
-        if (file.name.endsWith('.obj')) {
-            objLoader.load(objectURL, onLoad, onProgress, onError);
-        } else if (file.name.endsWith('.fbx')) {
-            fbxLoader.load(objectURL, onLoad, onProgress, onError);
-        } else { // Default to glb/gltf
-            gltfLoader.load(objectURL, onLoad, onProgress, onError);
         }
-    }
-    
-    // --- Low Poly Model Functions ---
-    
-    // --- FIX: Removed old, redundant addLowPoly... functions ---
-    
-    // --- NEW ASSETS ---
-    
-    function createLowPolyMug() {
-        const group = new THREE.Group();
-        group.name = "Mug";
-        const mat = materials.mug.clone();
-        
-        // Body
-        const bodyGeom = new THREE.CylinderGeometry(0.5, 0.4, 1, 16);
-        const body = new THREE.Mesh(bodyGeom, mat);
-        body.name = "Body";
-        body.position.y = 0.5;
-        body.castShadow = true;
-        group.add(body);
-        
-        // Handle
-        const handleGeom = new THREE.TorusGeometry(0.3, 0.1, 8, 16, Math.PI * 1.5);
-        const handle = new THREE.Mesh(handleGeom, mat);
-        handle.name = "Handle";
-        handle.position.x = 0.5;
-        handle.position.y = 0.6;
-        handle.rotation.y = Math.PI / 2;
-        handle.castShadow = true;
-        group.add(handle);
-        
-        return group;
-    }
-    
-    function createLowPolyRocket() {
-        const group = new THREE.Group();
-        group.name = "Rocket";
-        
-        const bodyMat = materials.rocketBody.clone();
-        const finMat = materials.rocketFin.clone();
-        
-        // Body
-        const bodyGeom = new THREE.CylinderGeometry(0.5, 0.5, 2, 16);
-        const body = new THREE.Mesh(bodyGeom, bodyMat);
-        body.name = "Body";
-        body.position.y = 1.5;
-        body.castShadow = true;
-        group.add(body);
-        
-        // Nose cone
-        const noseGeom = new THREE.ConeGeometry(0.5, 1, 16);
-        const nose = new THREE.Mesh(noseGeom, finMat);
-        nose.name = "NoseCone";
-        nose.position.y = 3;
-        nose.castShadow = true;
-        group.add(nose);
-        
-        // Fins
-        const finGeom = new THREE.BoxGeometry(0.8, 0.6, 0.1);
-        const fin1 = new THREE.Mesh(finGeom, finMat);
-        fin1.name = "Fin1";
-        fin1.position.set(0, 0.8, 0.5);
-        fin1.geometry.translate(0.4, 0, 0); // Pivot from edge
-        fin1.rotation.y = Math.PI / 4;
-        group.add(fin1);
-        
-        const fin2 = fin1.clone(); fin2.name = "Fin2";
-        fin2.rotation.y = -Math.PI / 4;
-        group.add(fin2);
-        
-        const fin3 = fin1.clone(); fin3.name = "Fin3";
-        fin3.rotation.y = Math.PI * 0.75;
-        group.add(fin3);
-        
-        const fin4 = fin1.clone(); fin4.name = "Fin4";
-        fin4.rotation.y = -Math.PI * 0.75;
-        group.add(fin4);
-        
-        return group;
-    }
-    
-    function createLowPolyMountain() {
-        const group = new THREE.Group();
-        group.name = "Mountain";
-        
-        const rockMat = materials.mountainRock.clone();
-        const snowMat = materials.mountainSnow.clone();
-        
-        // Base
-        const baseGeom = new THREE.CylinderGeometry(3, 4, 1, 8);
-        const base = new THREE.Mesh(baseGeom, rockMat);
-        base.name = "Base";
-        base.position.y = 0.5;
-        base.castShadow = true;
-        group.add(base);
-        
-        // Peak
-        const peakGeom = new THREE.ConeGeometry(3, 4, 8);
-        const peak = new THREE.Mesh(peakGeom, rockMat);
-        peak.name = "Peak";
-        peak.position.y = 3;
-        peak.castShadow = true;
-        group.add(peak);
-        
-        // Snow Cap
-        const snowGeom = new THREE.ConeGeometry(1.5, 2, 8);
-        const snow = new THREE.Mesh(snowGeom, snowMat);
-        snow.name = "SnowCap";
-        snow.position.y = 4; // 3 (peak center) + 4/2 (peak height) - 2/2 (snow height)
-        snow.castShadow = true;
-        group.add(snow);
-        
-        return group;
-    }
 
-    // --- Main ---
-    init();
-</script>
+        let isScrubbing = false;
+
+        function handleScrubStart(e) {
+            if (e.button !== 0) return;
+            isScrubbing = true;
+            if (isPlaying) togglePlayPause();
+            handleScrub(e);
+            document.addEventListener('mousemove', handleScrub);
+            document.addEventListener('mouseup', handleScrubEnd);
+        }
+
+        function handleScrub(e) {
+            if (!isScrubbing) return;
+            const scrubber = document.getElementById('timeline-scrubber');
+            const rect = scrubber.getBoundingClientRect();
+            let x = e.clientX - rect.left;
+            x = Math.max(0, Math.min(x, rect.width));
+            const newFrame = Math.round((x / rect.width) * MAX_FRAME);
+            goToFrame(newFrame);
+        }
+
+        function handleScrubEnd() {
+            isScrubbing = false;
+            document.removeEventListener('mousemove', handleScrub);
+            document.removeEventListener('mouseup', handleScrubEnd);
+        }
+
+        function goToFrame(frame) {
+            currentFrame = Math.max(0, Math.min(frame, MAX_FRAME));
+            updateObjectFromFrame(currentFrame);
+            updateTimelineUI();
+        }
+
+        function togglePlayPause() {
+            isPlaying = !isPlaying;
+            if (isPlaying) {
+                playPauseBtn.innerHTML = '<i class="fas fa-pause"></i>';
+                lastTime = performance.now();
+            } else {
+                playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+            }
+        }
+
+        function stopAnimation() {
+            isPlaying = false;
+            playPauseBtn.innerHTML = '<i class="fas fa-play"></i>';
+            goToFrame(0);
+        }
+
+        function recordKeyframe() {
+            if (!selectedObject || selectedObject === camera) {
+                notify("Select an object (Mesh or Light) to record a keyframe.", 'error');
+                return;
+            }
+            transformControls.detach();
+            const uuid = selectedObject.uuid;
+            if (!animationData[uuid]) {
+                animationData[uuid] = {};
+            }
+            animationData[uuid][Math.round(currentFrame)] = {
+                position: selectedObject.position.clone(),
+                rotation: selectedObject.rotation.toVector3(),
+                scale: selectedObject.scale.clone(),
+            };
+            transformControls.attach(selectedObject);
+            updateTimelineUI();
+            notify(`Keyframe set for ${selectedObject.name} at Frame ${Math.round(currentFrame)}`, 'success');
+        }
+
+        function updateObjectFromFrame(frame) {
+            const gizmoWasAttached = transformControls.object;
+            transformControls.detach();
+            for (const uuid in animationData) {
+                const keyframes = animationData[uuid];
+                const object = findObjectByUUID(uuid);
+                if (!object || !keyframes) continue;
+                const frames = Object.keys(keyframes).map(Number).sort((a, b) => a - b);
+                if (frames.length === 0) continue;
+                let k0_frame = frames.filter(f => f <= frame).pop();
+                let k1_frame = frames.filter(f => f > frame).shift();
+                const k0 = keyframes[k0_frame] || keyframes[frames[0]];
+                const k1 = keyframes[k1_frame] || keyframes[frames[frames.length - 1]];
+                if (!k0 || !k1) continue;
+                let t = 0;
+                if (k0_frame !== k1_frame) {
+                    t = (frame - k0_frame) / (k1_frame - k0_frame);
+                } else if (k0_frame !== undefined) {
+                    t = 0;
+                }
+                // Apply Transform
+                object.position.lerpVectors(k0.position, k1.position, t);
+                const rot0 = new THREE.Euler().setFromVector3(k0.rotation);
+                const rot1 = new THREE.Euler().setFromVector3(k1.rotation);
+                object.rotation.x = THREE.MathUtils.lerp(rot0.x, rot1.x, t);
+                object.rotation.y = THREE.MathUtils.lerp(rot0.y, rot1.y, t);
+                object.rotation.z = THREE.MathUtils.lerp(rot0.z, rot1.z, t);
+                object.scale.lerpVectors(k0.scale, k1.scale, t);
+                if (object === selectedObject) {
+                    updateInspector(object);
+                }
+            }
+            if (gizmoWasAttached) {
+                transformControls.attach(gizmoWasAttached);
+            }
+        }
+
+        // --- Event Handlers & Setup ---
+
+        function onWindowResize() {
+            const viewportContainer = document.getElementById('viewport-container');
+            camera.aspect = viewportContainer.clientWidth / viewportContainer.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(viewportContainer.clientWidth, viewportContainer.clientHeight);
+            updateTimelineUI();
+            render();
+        }
+function initUIListeners() {
+            // --- Menu Listeners ---
+            document.getElementById('file-menu').addEventListener('click', (e) => {
+                document.getElementById('file-menu-dropdown').classList.toggle('hidden');
+            });
+            document.getElementById('add-menu').addEventListener('click', (e) => {
+                document.getElementById('add-menu-dropdown').classList.toggle('hidden');
+            });
+            document.getElementById('render-menu').addEventListener('click', (e) => {
+                document.getElementById('render-menu-dropdown').classList.toggle('hidden');
+            });
+            document.addEventListener('click', (e) => {
+                if (!e.target.closest('#file-menu')) document.getElementById('file-menu-dropdown').classList.add('hidden');
+                if (!e.target.closest('#add-menu')) document.getElementById('add-menu-dropdown').classList.add('hidden');
+                if (!e.target.closest('#render-menu')) document.getElementById('render-menu-dropdown').classList.add('hidden');
+            });
+            // --- Object Creation Listeners ---
+            document.getElementById('add-cube').addEventListener('click', () => {
+                const newObj = createCube();
+                newObj.position.set(0, 0.5, 0);
+                scene.add(newObj);
+                objects.push(newObj);
+                selectObject(newObj);
+                updateOutliner();
+                notify("Cube added to scene.", 'success');
+            });
+            document.getElementById('add-sphere').addEventListener('click', () => {
+                const newObj = createSphere();
+                newObj.position.set(0, 0.5, 0);
+                scene.add(newObj);
+                objects.push(newObj);
+                selectObject(newObj);
+                updateOutliner();
+                notify("Sphere added to scene.", 'success');
+            });
+            document.getElementById('add-plane').addEventListener('click', () => {
+                const newObj = createPlane();
+                newObj.position.set(0, 0, 0);
+                scene.add(newObj);
+                objects.push(newObj);
+                selectObject(newObj);
+                updateOutliner();
+                notify("Plane added to scene.", 'success');
+            });
+            document.getElementById('add-dir-light').addEventListener('click', () => {
+                const newObj = createDirectionalLight();
+                newObj.position.set(5, 10, 5);
+                scene.add(newObj);
+                objects.push(newObj);
+                selectObject(newObj);
+                updateOutliner();
+                notify("Directional Light added.", 'success');
+            });
+            document.getElementById('add-ambient-light').addEventListener('click', () => {
+                const newObj = createAmbientLight();
+                scene.add(newObj);
+                objects.push(newObj);
+                selectObject(newObj);
+                updateOutliner();
+                notify("Ambient Light added.", 'success');
+            });
+            document.getElementById('add-spaceship').addEventListener('click', () => {
+                const newObj = createLowPolySpaceship();
+                newObj.position.set(0, 5, -5);
+                scene.add(newObj);
+                objects.push(newObj);
+                selectObject(newObj);
+                updateOutliner();
+                notify("Demo Spaceship added.", 'success');
+            });
+             document.getElementById('add-mountain').addEventListener('click', () => {
+                const newObj = createLowPolyMountain();
+                newObj.position.set(5, 0, 5);
+                scene.add(newObj);
+                objects.push(newObj);
+                selectObject(newObj);
+                updateOutliner();
+                notify("Demo Mountain added.", 'success');
+            });
+            // --- Animation UI Listeners ---
+            playPauseBtn = document.getElementById('anim-play-pause');
+            stopBtn = document.getElementById('anim-stop');
+            setKeyframeBtn = document.getElementById('anim-set-keyframe');
+            scrubberHandle = document.getElementById('scrubber-handle');
+            scrubberBar = document.getElementById('scrubber-bar');
+            keyframeMarkers = document.getElementById('keyframe-markers');
+            currentFrameDisplay = document.getElementById('current-frame-display');
+            playPauseBtn.addEventListener('click', togglePlayPause);
+            stopBtn.addEventListener('click', stopAnimation);
+            setKeyframeBtn.addEventListener('click', recordKeyframe);
+            document.getElementById('timeline-scrubber').addEventListener('mousedown', handleScrubStart);
+            // --- Help Modal Listeners ---
+            helpModal = document.getElementById('help-modal');
+            showHelpBtn = document.getElementById('show-help-modal');
+            closeHelpBtn = document.getElementById('close-help-modal');
+            modalStartBtn = document.getElementById('modal-start-creating');
+            showHelpBtn.addEventListener('click', () => helpModal.classList.remove('hidden'));
+            closeHelpBtn.addEventListener('click', () => helpModal.classList.add('hidden'));
+            modalStartBtn.addEventListener('click', () => helpModal.classList.add('hidden'));
+            if (typeof localStorage !== 'undefined' && !localStorage.getItem('dough3d_help_seen')) {
+                helpModal.classList.remove('hidden');
+                localStorage.setItem('dough3d_help_seen', 'true');
+            }
+            // --- Global Keyboard Shortcuts ---
+            document.addEventListener('keydown', (e) => {
+                if (e.key.toLowerCase() === 'k') {
+                    e.preventDefault();
+                    recordKeyframe();
+                }
+                if (e.key === ' ' && !e.target.matches('input, textarea')) {
+                    e.preventDefault();
+                    togglePlayPause();
+                }
+            });
+        }
+
+        // --- Render Loop ---
+
+        function render() {
+            renderer.render(scene, camera);
+        }
+
+        // Modified animate function for frame rate control and playback
+        function animate(time) {
+            requestAnimationFrame(animate);
+            if (isPlaying) {
+                if (!lastTime) lastTime = time;
+                const delta = (time - lastTime) / 1000;
+                const framesToAdvance = delta * FRAME_RATE;
+                if (framesToAdvance >= 1 || delta > (1 / FRAME_RATE)) {
+                    let nextFrame = currentFrame + framesToAdvance;
+                    if (nextFrame > MAX_FRAME) {
+                        nextFrame = nextFrame % (MAX_FRAME + 1);
+                    }
+                    goToFrame(nextFrame);
+                    lastTime = time;
+                }
+            }
+            orbitControls.update();
+            render();
+        }
+
+        // Wait for the window to fully load before initializing THREE.js
+        window.onload = function () {
+            init();
+        }
+    </script>
 </body>
 </html>
